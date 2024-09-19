@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:args/args.dart';
+import 'package:generate_localization_file/generate_localization_file.dart';
 
 const String version = '0.0.1';
 
@@ -28,7 +31,7 @@ void printUsage(ArgParser argParser) {
   print(argParser.usage);
 }
 
-void main(List<String> arguments) {
+Future<void> main(List<String> arguments) async {
   final ArgParser argParser = buildParser();
   try {
     final ArgResults results = argParser.parse(arguments);
@@ -52,6 +55,8 @@ void main(List<String> arguments) {
     if (verbose) {
       print('[VERBOSE] All arguments: ${results.arguments}');
     }
+   final glf= GenerateLocalizationFile('${Directory.current.path}/example');
+    await glf.getStrings();
   } on FormatException catch (e) {
     // Print usage information if an invalid argument was provided.
     print(e.message);
