@@ -2,14 +2,19 @@ name: generate_localization_file
 description: A sample command-line application with basic argument parsing.
 version: 0.0.1
 # repository: https://github.com/my_org/my_repo
-
+publish_to: none
 environment:
   sdk: ^3.3.1
 
 # Add regular dependencies here.
 dependencies:
   args: ^2.4.2
-  string_literal_finder: ^1.3.0+2
+  string_literal_finder:
+    git:
+      url: https://github.com/nemr0/string_literal_finder.git
+      path: packages/string_literal_finder
+executables:
+  genLocale:
 
 dev_dependencies:
   lints: ^3.0.0
