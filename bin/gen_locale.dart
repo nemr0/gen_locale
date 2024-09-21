@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:generate_localization_file/generate_localization_file.dart';
-import 'package:generate_localization_file/src/logger/print_helper.dart';
+import 'package:gen_locale/gen_locale.dart';
+import 'package:gen_locale/src/logger/print_helper.dart';
 
 ArgParser buildParser() {
   return ArgParser()
@@ -54,7 +54,7 @@ Future<void> main(List<String> arguments) async {
       print('[VERBOSE] All arguments: ${results.arguments}');
     }
 
-    final glf = GenerateLocalizationFile('${Directory.current.path}/example');
+    final glf = GenLocale('${Directory.current.path}/example');
     await glf.getStrings();
   } on FormatException catch (e) {
     // Print usage information if an invalid argument was provided.

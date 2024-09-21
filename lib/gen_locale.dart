@@ -1,18 +1,18 @@
-import 'package:generate_localization_file/src/stack_exception.dart';
-import 'package:generate_localization_file/src/text_map_builder.dart';
-import 'package:generate_localization_file/src/logger/print_helper.dart';
+import 'package:gen_locale/src/stack_exception.dart';
+import 'package:gen_locale/src/text_map_builder.dart';
+import 'package:gen_locale/src/logger/print_helper.dart';
 import 'package:string_literal_finder/string_literal_finder.dart' as slf;
 
 typedef PathToSourceMap = Map<String, List<(String source, String value)>>;
 
-class GenerateLocalizationFile {
+class GenLocale {
   final String basePath;
   late final slf.StringLiteralFinder finder;
   PathToSourceMap mapFileToListStrings = {};
   final bool verbose = PrintHelper().verbose;
   int lengthOfFoundStrings = 0;
 
-  GenerateLocalizationFile(this.basePath) {
+  GenLocale(this.basePath) {
     DateTime now = DateTime.now();
     finder = slf.StringLiteralFinder(basePath: basePath, excludePaths: [
       slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),

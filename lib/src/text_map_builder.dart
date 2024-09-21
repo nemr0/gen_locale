@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:generate_localization_file/src/file_manager.dart';
-import 'package:generate_localization_file/src/models/string_data.dart';
+import 'package:gen_locale/src/file_manager.dart';
+import 'package:gen_locale/src/models/string_data.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
 typedef PathToStringsMap =Map<String, List<StringData>>;
 class TextMapBuilder extends FileManager {
