@@ -17,22 +17,17 @@ class TextMapBuilder extends FileManager {
   Iterable<String>? getSourcesOrValues(String path, {bool source = true}) =>
       pathToStrings[path]?.map((e) => source ? e.$1 : e.$2);
 
-  addAString(FoundStringLiteral s) {
-    String stringValue = s.stringValue == null
-        ? s.stringLiteral.toSource().replaceAll('\'', '').replaceAll('"', '')
-        : s.stringValue!;
-
-    if (pathToStrings[s.filePath] == null) {
-      if (s.stringValue != null) {
-        pathToStrings[s.filePath] = [(s.stringLiteral.toSource(), stringValue)];
+  addAString(FoundStringLiteral foundString) {
+    String stringValue = foundString.stringValue == null
+        ? foundString.stringLiteral.toSource().replaceAll('\'', '').replaceAll('"', '')
+        : foundString.stringValue!;
+      if (pathToStrings[foundString.filePath] == null) {
+        pathToStrings[foundString.filePath] = [(foundString.stringLiteral.toSource(), stringValue)];
+      } else {
+        pathToStrings[foundString.filePath]!
+            .add((foundString.stringLiteral.toSource(), stringValue));
       }
-    } else {
-      if (s.stringValue != null) {
-        pathToStrings[s.filePath]!
-            .add((s.stringLiteral.toSource(), stringValue));
-      }
-    }
-    print(s.stringLiteral.toSource());
+    print(foundString.stringLiteral.toSource());
     print(stringValue);
   }
 }

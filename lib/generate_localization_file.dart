@@ -1,3 +1,4 @@
+import 'package:generate_localization_file/src/stack_exception.dart';
 import 'package:generate_localization_file/src/text_map_builder.dart';
 import 'package:generate_localization_file/src/logger/print_helper.dart';
 import 'package:string_literal_finder/string_literal_finder.dart' as slf;
@@ -9,7 +10,8 @@ class GenerateLocalizationFile {
   late final slf.StringLiteralFinder finder;
   PathToSourceMap mapFileToListStrings = {};
   final bool verbose = PrintHelper().verbose;
-  int length=0;
+  int lengthOfFoundStrings = 0;
+
   GenerateLocalizationFile(this.basePath) {
     DateTime now = DateTime.now();
     finder = slf.StringLiteralFinder(basePath: basePath, excludePaths: [
@@ -21,22 +23,28 @@ class GenerateLocalizationFile {
   }
 
   Future<void> analyzeProject() async {
-
+    try{
     List<slf.FoundStringLiteral> foundStringLiteral = await finder.start();
-    for (slf.FoundStringLiteral s in foundStringLiteral) {
-      TextMapBuilder().addAString(s);
+    for (slf.FoundStringLiteral foundString in foundStringLiteral) {
+      TextMapBuilder().addAString(foundString);
     }
-    length = foundStringLiteral.length;
+    lengthOfFoundStrings = foundStringLiteral.length;
+    }catch (e,s){
+      throw(StackException(message: 'Couldn\'t Start Dart Server', stack: '$e\n$s'));
+    }
+
   }
+
   Future<void> getStrings() async {
     try {
       PrintHelper().addProgress('Analyzing Project (this could take time)');
       await analyzeProject();
-      PrintHelper().addProgress('Fetched Strings: $length Files: ${TextMapBuilder().pathToStrings.length}');
-
-    } catch (e, s) {
+      PrintHelper().addProgress(
+          'Fetched Strings: $lengthOfFoundStrings Files: ${TextMapBuilder().pathToStrings.length}');
+    } on StackException catch (e) {
+      PrintHelper().failed(e.message);
       if (verbose) {
-        print('$e\n$s');
+        print(e.stack);
       }
     }
   }

@@ -15,6 +15,7 @@ dependencies:
     git:
       url: https://github.com/nemr0/string_literal_finder.git
       path: packages/string_literal_finder
+  yaml: ^3.1.2
 executables:
   genLocale:
 
