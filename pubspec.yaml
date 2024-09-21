@@ -9,6 +9,8 @@ environment:
 # Add regular dependencies here.
 dependencies:
   args: ^2.4.2
+  analyzer: ">=4.5.0 <7.0.0"
+  mason_logger: ^0.3.1
   string_literal_finder:
     git:
       url: https://github.com/nemr0/string_literal_finder.git
