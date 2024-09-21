@@ -23,16 +23,16 @@ class GenerateLocalizationFile {
   }
 
   Future<void> analyzeProject() async {
-    try{
-    List<slf.FoundStringLiteral> foundStringLiteral = await finder.start();
-    for (slf.FoundStringLiteral foundString in foundStringLiteral) {
-      TextMapBuilder().addAString(foundString);
+    try {
+      List<slf.FoundStringLiteral> foundStringLiteral = await finder.start();
+      for (slf.FoundStringLiteral foundString in foundStringLiteral) {
+        TextMapBuilder().addAString(foundString);
+      }
+      lengthOfFoundStrings = foundStringLiteral.length;
+    } catch (e, s) {
+      throw (StackException(
+          message: 'Couldn\'t Start Dart Server', stack: '$e\n$s'));
     }
-    lengthOfFoundStrings = foundStringLiteral.length;
-    }catch (e,s){
-      throw(StackException(message: 'Couldn\'t Start Dart Server', stack: '$e\n$s'));
-    }
-
   }
 
   Future<void> getStrings() async {

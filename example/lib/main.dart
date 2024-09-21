@@ -13,6 +13,7 @@ class MyApp extends StatelessWidget {
   final textFive='''eoeoeo!''';
   final textSix = "ddd";
   final textSeven = """ddd""";
+  final textEight = r"""ddd$var""";
 
   // This widget is the root of your application.
   @override
