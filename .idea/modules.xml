@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/generate_localization_file.iml" filepath="$PROJECT_DIR$/generate_localization_file.iml" />
+      <module fileurl="file://$PROJECT_DIR$/gen_locale.iml" filepath="$PROJECT_DIR$/gen_locale.iml" />
     </modules>
   </component>
 </project>
