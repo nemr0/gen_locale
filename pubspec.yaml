@@ -4,13 +4,13 @@ version: 0.0.1
 # repository: https://github.com/my_org/my_repo
 publish_to: none
 environment:
-  sdk: ^3.3.1
+  sdk: '>=3.0.0 <=4.0.0'
 
 # Add regular dependencies here.
 dependencies:
   args: ^2.4.2
-  analyzer: ">=4.5.0 <7.0.0"
-  mason_logger: ^0.3.1
+  analyzer: ">=3.0.0 <7.0.0"
+  mason_logger: ">=0.2.14 <0.3.1"
   string_literal_finder:
     git:
       url: https://github.com/nemr0/string_literal_finder.git

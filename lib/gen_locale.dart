@@ -11,15 +11,13 @@ class GenLocale {
   PathToSourceMap mapFileToListStrings = {};
   final bool verbose = PrintHelper().verbose;
   int lengthOfFoundStrings = 0;
-
+  initFinder(String basePath)=>finder = slf.StringLiteralFinder(basePath: basePath, excludePaths: [
+    slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),
+    IncludeOnlyDartFiles(),
+    ...slf.ExcludePathChecker.excludePathDefaults
+  ]);
   GenLocale(this.basePath) {
-    DateTime now = DateTime.now();
-    finder = slf.StringLiteralFinder(basePath: basePath, excludePaths: [
-      slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),
-      IncludeOnlyDartFiles(),
-      ...slf.ExcludePathChecker.excludePathDefaults
-    ]);
-    print(DateTime.now().difference(now).inMilliseconds);
+    initFinder( basePath);
   }
 
   Future<void> analyzeProject() async {
