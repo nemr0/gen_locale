@@ -1,12 +1,11 @@
 import 'dart:io';
 
-import 'package:gen_locale/src/file_manager.dart';
 import 'package:gen_locale/src/models/string_data.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
 
 typedef PathToStringsMap = Map<String, List<StringData>>;
 
-class TextMapBuilder extends FileManager {
+class TextMapBuilder {
   PathToStringsMap pathToStrings = {};
 
   /// generates a [StringData] object and add it to [pathToStrings] through file path
@@ -24,7 +23,6 @@ class TextMapBuilder extends FileManager {
     } else {
       pathToStrings[foundString.filePath]!.add(stringData);
     }
-    print(stringData);
   }
 
   String _valueFromSource(String source) {
@@ -62,7 +60,6 @@ class TextMapBuilder extends FileManager {
     final matches = RegExp(r"""\$\{?([a-zA-Z_][a-zA-Z0-9_\.]*)\}?""").allMatches(source);
     for (var match in matches) {
       String? matchString = match.group(0);
-      print('matchString:$matchString');
       if (matchString == null) continue;
       variables.add(match.group(1) ?? matchString.replaceFirst("\${", "").replaceFirst("}", "").replaceFirst("\$", ""));
       source = source.replaceFirst(matchString, "{}");
