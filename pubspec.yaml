@@ -19,6 +19,7 @@ dependencies:
   code_builder: ^4.10.0
   dart_style: ^2.3.6
   equatable: ^2.0.5
+  glob: ^2.1.2
 executables:
   genLocale:
 

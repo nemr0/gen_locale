@@ -3,7 +3,7 @@ import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 
 
-class GenerateDartClasses {
+class GenerateEnumFromMap {
   final DartEmitter emitter = DartEmitter();
   Set<String> keys = {};
   void addKey(String value) => keys.add(value);
