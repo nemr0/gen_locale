@@ -11,10 +11,11 @@ class TextMapBuilder extends FileManager {
 
   /// generates a [StringData] object and add it to [pathToStrings] through file path
   addAString(FoundStringLiteral foundString) {
-    if (_valueFromSource(foundString.stringLiteral.toSource()).isEmpty) return;
-    final matched = _matchVariables(foundString.stringLiteral.toSource());
+    String source=foundString.stringLiteral.toSource();
+    if (_valueFromSource(source).isEmpty) return;
+    final matched = _matchVariables(source);
     StringData stringData = StringData(
-        source: matched.$1,
+        source: source,
         value: _valueFromSource(matched.$1),
         variables: matched.$2,
         withContext: _containsContext(foundString.filePath));
