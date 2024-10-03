@@ -4,7 +4,7 @@ import 'package:gen_locale/src/models/string_data.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
 
 typedef PathToStringsMap = Map<String, List<StringData>>;
-
+/// Builds a Map of String, StringData(source, value, withContext, variables) -> [pathToStrings]
 class TextMapBuilder {
   PathToStringsMap pathToStrings = {};
 
@@ -24,7 +24,7 @@ class TextMapBuilder {
       pathToStrings[foundString.filePath]!.add(stringData);
     }
   }
-
+  /// Removes Quotations from variables wither it's a raw string or a normal one
   String _valueFromSource(String source) {
     // if starts as a raw string
     if (source.startsWith("r'") || source.startsWith('r"')) {
