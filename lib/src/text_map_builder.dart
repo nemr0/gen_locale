@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:gen_locale/src/file_manager.dart';
 import 'package:gen_locale/src/models/string_data.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
 
@@ -36,9 +37,8 @@ class TextMapBuilder {
   /// Checks if file contains context
   /// just checks if one of material, cupertino or widgets libraries is imported
   bool containsContext(String path) {
-    if (File(path).existsSync() == false) return false;
-
-    return RegExp(r'''import\s*['"](package:flutter\/(widgets|cupertino|material)\.dart)['"]\s*;''').hasMatch(File(path).readAsStringSync());
+    if (!FileManager.fileExists(path)) return false;
+    return RegExp(r'''import\s*['"](package:flutter\/(widgets|cupertino|material)\.dart)['"]\s*;''').hasMatch(FileManager.getContents(path));
   }
 
   /// Extracts variables within the source text

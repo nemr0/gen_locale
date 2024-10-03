@@ -2,10 +2,11 @@ import 'dart:io';
 
 
 class FileManager {
-  Future<void> writeFile(String path, String contents) =>
+  static Future<void> writeFile(String path, String contents) =>
       File(path).writeAsString(contents);
 
-  String getFileContent(String path) => File(path).readAsStringSync();
+  static String getContents(String path) => File(path).readAsStringSync();
+  static bool fileExists(String path) => File(path).existsSync();
 
 
 }
