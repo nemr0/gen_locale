@@ -1,10 +1,9 @@
-import 'package:equatable/equatable.dart';
 ///
 /// value: replaced variables, cleaned with no quotation
 /// source: original string
 /// variables: all variables within
 /// withContext: should use context for reactivity or not.
-class StringData extends Equatable{
+class StringData {
   final List<String>? variables;
   final String source;
   final String value;
@@ -21,6 +20,4 @@ class StringData extends Equatable{
   toString() =>
       '\nStringData(\nsource: $source,\nvalue: $value,\nwithContext: $withContext,\nvariables: $variables)\n';
 
-  @override
-  List<Object?> get props => [variables,source,value,withContext];
 }

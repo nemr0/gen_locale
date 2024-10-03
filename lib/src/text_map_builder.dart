@@ -11,13 +11,13 @@ class TextMapBuilder {
   /// generates a [StringData] object and add it to [pathToStrings] through file path
   addAString(FoundStringLiteral foundString) {
     String source=foundString.stringLiteral.toSource();
-    if (_valueFromSource(source).isEmpty) return;
-    final matched = _matchVariables(source);
+    if (valueFromSource(source).isEmpty) return;
+    final matched = matchVariables(source);
     StringData stringData = StringData(
         source: source,
-        value: _valueFromSource(matched.$1),
+        value: valueFromSource(matched.$1),
         variables: matched.$2,
-        withContext: _containsContext(foundString.filePath));
+        withContext: containsContext(foundString.filePath));
     if (pathToStrings[foundString.filePath] == null) {
       pathToStrings[foundString.filePath] = [stringData];
     } else {
@@ -25,7 +25,7 @@ class TextMapBuilder {
     }
   }
   /// Removes Quotations from variables wither it's a raw string or a normal one
-  String _valueFromSource(String source) {
+  String valueFromSource(String source) {
     // if starts as a raw string
     if (source.startsWith("r'") || source.startsWith('r"')) {
       return source.replaceFirst("r'", '').replaceFirst('r"', '').replaceAll("'", '').replaceAll('"', '');
@@ -35,7 +35,7 @@ class TextMapBuilder {
 
   /// Checks if file contains context
   /// just checks if one of material, cupertino or widgets libraries is imported
-  bool _containsContext(String path) {
+  bool containsContext(String path) {
     if (File(path).existsSync() == false) return false;
 
     return RegExp(r'''import\s*['"](package:flutter\/(widgets|cupertino|material)\.dart)['"]\s*;''').hasMatch(File(path).readAsStringSync());
@@ -44,7 +44,7 @@ class TextMapBuilder {
   /// Extracts variables within the source text
   /// returns source replaced all variables with {}
   /// and a list of string with all variables names with no invocation ($,${})
-  (String replacedSource, List<String>? variables) _matchVariables(String source) {
+  (String replacedSource, List<String>? variables) matchVariables(String source) {
     // skips no vars strings and raw strings
     if (source.contains('\$') == false || source.startsWith('r"') || source.startsWith("r'")) {
       return (source, null);
