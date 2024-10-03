@@ -36,13 +36,9 @@ class TextMapBuilder {
   /// Checks if file contains context
   /// just checks if one of material, cupertino or widgets libraries is imported
   bool _containsContext(String path) {
-    final file = File(path);
-    if (file.existsSync() == false) return false;
-    final contents = file.readAsStringSync();
-    if (RegExp(r'''import\s*['"](package:flutter\/(widgets|cupertino|material)\.dart)['"]\s*;''').hasMatch(contents)) {
-      return true;
-    }
-    return false;
+    if (File(path).existsSync() == false) return false;
+
+    return RegExp(r'''import\s*['"](package:flutter\/(widgets|cupertino|material)\.dart)['"]\s*;''').hasMatch(File(path).readAsStringSync());
   }
 
   /// Extracts variables within the source text
