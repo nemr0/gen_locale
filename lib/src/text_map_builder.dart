@@ -39,9 +39,7 @@ class TextMapBuilder {
     final file = File(path);
     if (file.existsSync() == false) return false;
     final contents = file.readAsStringSync();
-    if (contents.contains("import 'package:flutter/material.dart';") ||
-        contents.contains("import 'package:flutter/cupertino.dart';") ||
-        contents.contains("import 'package:flutter/widgets.dart';")) {
+    if (RegExp(r'''import\s*['"](package:flutter\/(widgets|cupertino|material)\.dart)['"]\s*;''').hasMatch(contents)) {
       return true;
     }
     return false;
