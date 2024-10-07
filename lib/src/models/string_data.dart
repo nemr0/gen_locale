@@ -17,7 +17,18 @@ class StringData {
   });
 
   @override
-  toString() =>
-      '\nStringData(\nsource: $source,\nvalue: $value,\nwithContext: $withContext,\nvariables: $variables)\n';
+  toString() => '\nStringData(\nsource: $source,\nvalue: $value,\nwithContext: $withContext,\nvariables: $variables)\n';
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! StringData) return false;
+    return value == other.value &&
+        source == other.source &&
+        withContext == other.withContext &&
+        variables?.join() == other.variables?.join();
+  }
+
+  @override
+  int get hashCode => Object.hash(value, source,withContext,variables?.join());
 
 }

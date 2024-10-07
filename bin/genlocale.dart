@@ -35,6 +35,7 @@ Future<void> main(List<String> arguments) async {
   try {
     final ArgResults results = argParser.parse(arguments);
 
+
     // Process the parsed arguments.
     if (results.wasParsed('help')) {
       printUsage(argParser);
@@ -48,14 +49,16 @@ Future<void> main(List<String> arguments) async {
       PrintHelper().verbose = true;
     }
 
+
     // Act on the arguments provided.
     // print('Positional arguments: ${results.rest}');
     if (PrintHelper().verbose) {
       print('[VERBOSE] All arguments: ${results.arguments}');
     }
-
-    final glf = GenLocale('${Directory.current.path}/example');
-    await glf.getStrings();
+    String baseUrl = GenLocale.promptBaseUri();
+    List<String> excludeStrings= GenLocale.promptExcludeStrings();
+    final genLocale=GenLocale(basePath:baseUrl ,excludeStrings:excludeStrings);
+    await genLocale.run();
   } on FormatException catch (e) {
     // Print usage information if an invalid argument was provided.
     print(e.message);

@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
   // should be skipped
   final text='';
   // should be caught. (1)
-  final textTwo='a';
+  final textTwo= 'a';
     // should be caught.(2)
   final textThree='b';
     // should be caught.

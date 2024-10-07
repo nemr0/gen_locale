@@ -20,7 +20,7 @@ dependencies:
   dart_style: ^2.3.6
   glob: ^2.1.2
 executables:
-  genLocale:
+  genlocale:
 
 dev_dependencies:
   lints: ^3.0.0

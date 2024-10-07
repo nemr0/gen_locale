@@ -7,6 +7,7 @@ class FileManager {
 
   static String getContents(String path) => File(path).readAsStringSync();
   static bool fileExists(String path) => File(path).existsSync();
+  static bool directoryExists(String path) => Directory(path).existsSync();
 
 
 }
