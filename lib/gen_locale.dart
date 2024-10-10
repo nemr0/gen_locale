@@ -1,66 +1,90 @@
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:gen_locale/src/file_manager.dart';
 import 'package:gen_locale/src/logger/exceptions.dart';
+import 'package:gen_locale/src/models/exclude_path_checker_impl/exclude_path_that_contains.dart';
+import 'package:gen_locale/src/models/exclude_path_checker_impl/include_only_dart_files.dart';
+import 'package:gen_locale/src/models/gen_locale_abstract.dart';
+import 'package:gen_locale/src/models/string_data.dart';
+import 'package:gen_locale/src/models/text_map_builder.dart';
 import 'package:gen_locale/src/stack_exception.dart';
 import 'package:gen_locale/src/text_map_builder.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
 import 'package:string_literal_finder/string_literal_finder.dart' as slf;
 
-class GenLocale {
-  final String basePath;
-  late final slf.StringLiteralFinder finder;
+class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   final bool verbose = PrintHelper().verbose;
-  late final TextMapBuilder textMapBuilder;
-  late final List<slf.ExcludePathChecker> excludes;
+  /// A Map of File Path as a key with value of List of [StringData]
+  /// Used For Replacing texts file by file.
 
-  PathToStringsMap get pathToStringsMap => textMapBuilder.pathToStrings;
+  SetOfStringData get setOfStringData => textMapBuilder.setOfStringData;
   int lengthOfFoundStrings = 0;
 
   initFinder() => finder = slf.StringLiteralFinder(basePath: basePath, excludePaths: excludes);
 
-  initExcludes(List<String>? excludeStrings) {
+  initExcludes(List<String> excludeStrings) {
     excludes = [
       slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),
       IncludeOnlyDartFiles(),
       ...slf.ExcludePathChecker.excludePathDefaults,
+      ...excludeStrings.map<ExcludePathThatContains>((e) => ExcludePathThatContains(contains: e)),
     ];
-    if (excludeStrings != null) {
-      excludes.addAll(excludeStrings.map<ExcludePathThatContains>((e) => ExcludePathThatContains(contains: e)));
-    }
   }
 
-  GenLocale({required this.basePath, List<String>? excludeStrings}) {
-    initExcludes(excludeStrings);
+  GenLocaleStringLiteralFinder();
+
+  init() async {
+    PrintHelper().version();
+    _getReplaceCodeBase();
+    basePath = _getBaseUri();
+    initExcludes(_getUserExcludes());
+    PrintHelper().addProgress('Analyzing Project');
+    await Future.delayed(Duration.zero);
     initFinder();
-    textMapBuilder = TextMapBuilder();
+    textMapBuilder = TextMapBuilderStringLiteral();
   }
 
-  static String promptBaseUri() {
+  late final bool replaceCodeBase;
+
+  _getReplaceCodeBase() {
+    replaceCodeBase =
+        PrintHelper().chooseOne<bool>('Do you want to replace all strings in your code base?', [true, false], false);
+  }
+
+  String _getBaseUri() {
     String base = PrintHelper().prompt('Enter Project Path... (default to current)', Directory.current.path);
     if (base.startsWith('./')) {
       base = base.replaceFirst('.', Directory.current.path);
-      print(base);
     }
     if (FileManager.directoryExists(base)) {
-      print('exists');
       return base;
     } else {
-      print('not exist');
-
       return Directory.current.path;
     }
   }
 
-  static List<String> promptExcludeStrings() => PrintHelper().promptAny(
+  List<slf.FoundStringLiteral> foundStringLiteral= [];
+
+  List<String> _getUserExcludes() => PrintHelper().promptAny(
       'excludes: to exclude files with specific path. for example: "presentation,business" excludes all paths that contain presentation or business');
 
-  Future<void> analyzeProject() async {
+
+
+  Future<void> _analyzeProject() async {
     try {
-      List<slf.FoundStringLiteral> foundStringLiteral = await finder.start();
-      for (slf.FoundStringLiteral foundString in foundStringLiteral) {
-        textMapBuilder.addAString(foundString);
-      }
+      await Isolate.run(() async {
+        List<slf.FoundStringLiteral> a = await finder.start();
+        for(var found in a){
+          textMapBuilder.addAString(found);
+        }
+        print(textMapBuilder.setOfStringData);
+       // return Map.fromIterables(textMapBuilder.pathToStrings.keys, textMapBuilder.pathToStrings.values.map((e) => e.map((e) => e.toMap()).toList()));
+      });
+
+      print('--------------------------------------------');
+      print(textMapBuilder.setOfStringData);
+
       lengthOfFoundStrings = foundStringLiteral.length;
     } catch (e, s) {
       if (verbose) {
@@ -71,36 +95,12 @@ class GenLocale {
     }
   }
 
+  @override
   Future<void> run() async {
-    try {
-      PrintHelper().addProgress('Analyzing Project');
-      await analyzeProject();
-      PrintHelper().completeProgress();
+    await _analyzeProject();
 
-      PrintHelper().print('Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.pathToStrings.length}');
-    } on StackException catch (e) {
-      PrintHelper().failed(e.message);
-      if (verbose) {
-        print(e.stack);
-      }
-    }
-  }
-}
+    PrintHelper().completeProgress();
 
-class IncludeOnlyDartFiles extends slf.ExcludePathChecker {
-  @override
-  bool shouldExclude(String path) {
-    return path.endsWith('.dart') == false;
-  }
-}
-
-class ExcludePathThatContains extends slf.ExcludePathChecker {
-  final String contains;
-
-  ExcludePathThatContains({required this.contains});
-
-  @override
-  bool shouldExclude(String path) {
-    return path.contains(contains);
+    PrintHelper().print('Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.setOfStringData.length}');
   }
 }

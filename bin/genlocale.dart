@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:gen_locale/gen_locale.dart';
@@ -55,14 +54,13 @@ Future<void> main(List<String> arguments) async {
     if (PrintHelper().verbose) {
       print('[VERBOSE] All arguments: ${results.arguments}');
     }
-    String baseUrl = GenLocale.promptBaseUri();
-    List<String> excludeStrings= GenLocale.promptExcludeStrings();
-    final genLocale=GenLocale(basePath:baseUrl ,excludeStrings:excludeStrings);
+
+    final genLocale=GenLocaleStringLiteralFinder();
+    await genLocale.init();
     await genLocale.run();
-  } on FormatException catch (e) {
+  } catch(e,s) {
+    PrintHelper().progressFailed('$e\n$s');
     // Print usage information if an invalid argument was provided.
-    print(e.message);
-    print('');
     printUsage(argParser);
   }
 }

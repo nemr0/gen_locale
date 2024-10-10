@@ -25,7 +25,7 @@ class PrintHelper {
   /// Prints the logo in ./ansi_logo.dart
   void version() => _logger.info(
         logoFile(
-          'generate_localization_file: 0.0.1',
+          'genlocale: 0.0.1',
         ),
       );
 
@@ -42,7 +42,7 @@ class PrintHelper {
   List<String> promptAny(String message, {List<String> defaultValue = const []}) =>
       _hasTerminal ? _logger.promptAny(message) : defaultValue;
 
-  late Progress _progress;
+   Progress? _progress;
 
   void addProgress(String message) {
     msg = message;
@@ -50,17 +50,17 @@ class PrintHelper {
   }
 
   void updateProgress(String message) {
-    _progress.complete(green.wrap(msg));
+    _progress?.complete(green.wrap(msg));
     msg = message;
     _progress = _logger.progress(message);
   }
 
   void updateCurrentProgress(String message) {
     msg = message;
-    _progress.update(yellow.wrap(msg) ?? msg);
+    _progress?.update(yellow.wrap(msg) ?? msg);
   }
 
-  void completeProgress() => _progress.complete(green.wrap(msg));
-
-  void failed(String error) => _progress.fail(red.wrap(error));
+  void completeProgress() => _progress?.complete(green.wrap(msg));
+  void fail(String error)=> _logger.err(error);
+  void progressFailed(String error) =>_progress==null?_logger.err(error): _progress?.fail(red.wrap(error));
 }

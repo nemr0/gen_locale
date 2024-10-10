@@ -1,31 +1,59 @@
-import 'dart:io';
-
 import 'package:gen_locale/src/file_manager.dart';
 import 'package:gen_locale/src/models/string_data.dart';
+import 'package:gen_locale/src/models/text_map_builder.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
 
-typedef PathToStringsMap = Map<String, List<StringData>>;
-/// Builds a Map of String, StringData(source, value, withContext, variables) -> [pathToStrings]
-class TextMapBuilder {
-  PathToStringsMap pathToStrings = {};
+class TextMapBuilderStringLiteral extends TextMapBuilder {
+  @override
+  SetOfStringData get setOfStringData => _pathToStrings;
 
-  /// generates a [StringData] object and add it to [pathToStrings] through file path
-  addAString(FoundStringLiteral foundString) {
-    String source=foundString.stringLiteral.toSource();
+  final SetOfStringData _pathToStrings = {};
+  final PathToStringData _pathToString = {};
+
+
+
+  _addToPathToStringsMap(StringData data) {
+    for (String path in data.filesPath) {
+      if (_pathToString[path] == null) {
+        _pathToString[path] = [data];
+      } else {
+        _pathToString[path]!.add(data);
+      }
+    }
+  }
+  bool keyExists (String key) => _pathToStrings.where((element) => element.key==key).isNotEmpty;
+  String _getKeyFor(String filePath){
+
+    String key= '${filePath.split('/').last.split('.').first}-${_pathToString[filePath]?.length??0}';
+
+    if(keyExists(key)){
+      return _getKeyFor(key);
+    }
+    else {
+      return key;
+    }
+  }
+
+  @override
+  void addAString(var foundString) {
+    if (foundString is! FoundStringLiteral?) {
+      throw ('Error: FoundString is not FoundStringLiteral');
+    }
+    if (foundString == null) return;
+    String source = foundString.stringLiteral.toSource();
     if (valueFromSource(source).isEmpty) return;
     final matched = matchVariables(source);
     StringData stringData = StringData(
         source: source,
         value: valueFromSource(matched.$1),
         variables: matched.$2,
-        withContext: containsContext(foundString.filePath));
-    if (pathToStrings[foundString.filePath] == null) {
-      pathToStrings[foundString.filePath] = [stringData];
-    } else {
-      pathToStrings[foundString.filePath]!.add(stringData);
-    }
+        withContext: containsContext(foundString.filePath),
+        filesPath: [foundString.filePath], key: _getKeyFor(foundString.filePath));
+    _addToPathToStringsMap(stringData);
+    addAStringData(stringData);
   }
-  /// Removes Quotations from variables wither it's a raw string or a normal one
+
+  @override
   String valueFromSource(String source) {
     // if starts as a raw string
     if (source.startsWith("r'") || source.startsWith('r"')) {
@@ -34,16 +62,14 @@ class TextMapBuilder {
     return source.replaceAll('\'', '').replaceAll('"', '');
   }
 
-  /// Checks if file contains context
-  /// just checks if one of material, cupertino or widgets libraries is imported
+  @override
   bool containsContext(String path) {
     if (!FileManager.fileExists(path)) return false;
-    return RegExp(r'''import\s*['"](package:flutter\/(widgets|cupertino|material)\.dart)['"]\s*;''').hasMatch(FileManager.getContents(path));
+    return RegExp(r'''import\s*['"](package:flutter\/(widgets|cupertino|material)\.dart)['"]\s*;''')
+        .hasMatch(FileManager.getContents(path));
   }
 
-  /// Extracts variables within the source text
-  /// returns source replaced all variables with {}
-  /// and a list of string with all variables names with no invocation ($,${})
+  @override
   (String replacedSource, List<String>? variables) matchVariables(String source) {
     // skips no vars strings and raw strings
     if (source.contains('\$') == false || source.startsWith('r"') || source.startsWith("r'")) {
@@ -59,5 +85,19 @@ class TextMapBuilder {
       source = source.replaceFirst(matchString, "{}");
     }
     return (source, variables.isEmpty ? null : variables);
+  }
+
+  @override
+  void addAStringData(StringData foundString) {
+    _pathToStrings.removeWhere((element) {
+      if (element.source == foundString.source) {
+        foundString.filesPath.addAll(element.filesPath);
+        return true;
+      } else {
+        return false;
+      }
+    });
+
+    _pathToStrings.add(foundString);
   }
 }
