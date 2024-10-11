@@ -15,20 +15,23 @@ import 'package:string_literal_finder/string_literal_finder.dart' as slf;
 
 class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   final bool verbose = PrintHelper().verbose;
+
   /// A Map of File Path as a key with value of List of [StringData]
   /// Used For Replacing texts file by file.
 
   SetOfStringData get setOfStringData => textMapBuilder.setOfStringData;
   int lengthOfFoundStrings = 0;
 
-  initFinder() => finder = slf.StringLiteralFinder(basePath: basePath, excludePaths: excludes);
+  initFinder() => finder =
+      slf.StringLiteralFinder(basePath: basePath, excludePaths: excludes);
 
   initExcludes(List<String> excludeStrings) {
     excludes = [
       slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),
       IncludeOnlyDartFiles(),
       ...slf.ExcludePathChecker.excludePathDefaults,
-      ...excludeStrings.map<ExcludePathThatContains>((e) => ExcludePathThatContains(contains: e)),
+      ...excludeStrings.map<ExcludePathThatContains>(
+          (e) => ExcludePathThatContains(contains: e)),
     ];
   }
 
@@ -48,43 +51,53 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   late final bool replaceCodeBase;
 
   _getReplaceCodeBase() {
-    replaceCodeBase =
-        PrintHelper().chooseOne<bool>('Do you want to replace all strings in your code base?', [true, false], false);
+    replaceCodeBase = PrintHelper().chooseOne<bool>(
+        'Do you want to replace all strings in your code base?',
+        [true, false],
+        false);
   }
 
   String _getBaseUri() {
-    String base = PrintHelper().prompt('Enter Project Path... (default to current)', Directory.current.path);
+    String base = PrintHelper().prompt(
+        'Enter Project Path... (default to current)', Directory.current.path);
     if (base.startsWith('./')) {
       base = base.replaceFirst('.', Directory.current.path);
     }
     if (FileManager.directoryExists(base)) {
       return base;
     } else {
-      PrintHelper().print('Couldn\'t find Directory, Switching to ${Directory.current.path}');
+      PrintHelper().print(
+          'Couldn\'t find Directory, Switching to ${Directory.current.path}');
       return Directory.current.path;
     }
   }
 
-  List<slf.FoundStringLiteral> foundStringLiteral= [];
-
   List<String> _getUserExcludes() => PrintHelper().promptAny(
       'excludes: to exclude files with specific path. for example: "presentation,business" excludes all paths that contain presentation or business');
 
-
-
   Future<void> _analyzeProject() async {
     try {
-
-      List<slf.FoundStringLiteral> a = await finder.start();
-
-
-      lengthOfFoundStrings = foundStringLiteral.length;
+      List<Map<String, dynamic>> data = await Isolate.run(() async {
+        List<slf.FoundStringLiteral> a = await finder.start();
+        for (var found in a) {
+          textMapBuilder.addAString(found);
+        }
+        return textMapBuilder.setOfStringData.map((e) => e.toMap()).toList();
+      });
+      Set<StringData> dataSet = data.map((e) => StringData.fromJson(e)).toSet();
+      textMapBuilder.addAllStringData(dataSet);
+      lengthOfFoundStrings = dataSet.length;
+      if (verbose) {
+        print(textMapBuilder.setOfStringData);
+        print('--------------------------------------------');
+      }
     } catch (e, s) {
       if (verbose) {
         print(e);
         print(s);
       }
-      throw (StackException(message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
+      throw (StackException(
+          message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
     }
   }
 
@@ -94,6 +107,7 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
 
     PrintHelper().completeProgress();
 
-    PrintHelper().print('Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.pathToStringData.keys.length}');
+    PrintHelper().print(
+        'Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.pathToStringData.keys.length}');
   }
 }

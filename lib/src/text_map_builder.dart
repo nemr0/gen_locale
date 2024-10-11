@@ -29,7 +29,6 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
       // recursive to paths
       key = _getKeyFor(key);
     }
-    print(key);
       return key;
 
   }
