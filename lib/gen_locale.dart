@@ -60,6 +60,7 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
     if (FileManager.directoryExists(base)) {
       return base;
     } else {
+      PrintHelper().print('Couldn\'t find Directory, Switching to ${Directory.current.path}');
       return Directory.current.path;
     }
   }
@@ -73,17 +74,9 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
 
   Future<void> _analyzeProject() async {
     try {
-      await Isolate.run(() async {
-        List<slf.FoundStringLiteral> a = await finder.start();
-        for(var found in a){
-          textMapBuilder.addAString(found);
-        }
-        print(textMapBuilder.setOfStringData);
-       // return Map.fromIterables(textMapBuilder.pathToStrings.keys, textMapBuilder.pathToStrings.values.map((e) => e.map((e) => e.toMap()).toList()));
-      });
 
-      print('--------------------------------------------');
-      print(textMapBuilder.setOfStringData);
+      List<slf.FoundStringLiteral> a = await finder.start();
+
 
       lengthOfFoundStrings = foundStringLiteral.length;
     } catch (e, s) {
@@ -101,6 +94,6 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
 
     PrintHelper().completeProgress();
 
-    PrintHelper().print('Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.setOfStringData.length}');
+    PrintHelper().print('Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.pathToStringData.keys.length}');
   }
 }

@@ -5,9 +5,9 @@ import 'package:string_literal_finder/string_literal_finder.dart';
 
 class TextMapBuilderStringLiteral extends TextMapBuilder {
   @override
-  SetOfStringData get setOfStringData => _pathToStrings;
+  SetOfStringData get setOfStringData => _setOfStringData;
 
-  final SetOfStringData _pathToStrings = {};
+  final SetOfStringData _setOfStringData = {};
   final PathToStringData _pathToString = {};
 
 
@@ -21,17 +21,17 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
       }
     }
   }
-  bool keyExists (String key) => _pathToStrings.where((element) => element.key==key).isNotEmpty;
   String _getKeyFor(String filePath){
-
+    // {file_name}-{index}
     String key= '${filePath.split('/').last.split('.').first}-${_pathToString[filePath]?.length??0}';
-
-    if(keyExists(key)){
-      return _getKeyFor(key);
+    // if key exists
+    if(_setOfStringData.where((element) => element.key==key).isNotEmpty){
+      // recursive to paths
+      key = _getKeyFor(key);
     }
-    else {
+    print(key);
       return key;
-    }
+
   }
 
   @override
@@ -39,9 +39,9 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
     if (foundString is! FoundStringLiteral?) {
       throw ('Error: FoundString is not FoundStringLiteral');
     }
-    if (foundString == null) return;
+    if (foundString == null) return ;
     String source = foundString.stringLiteral.toSource();
-    if (valueFromSource(source).isEmpty) return;
+    if (valueFromSource(source).isEmpty) return ;
     final matched = matchVariables(source);
     StringData stringData = StringData(
         source: source,
@@ -49,7 +49,6 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
         variables: matched.$2,
         withContext: containsContext(foundString.filePath),
         filesPath: [foundString.filePath], key: _getKeyFor(foundString.filePath));
-    _addToPathToStringsMap(stringData);
     addAStringData(stringData);
   }
 
@@ -89,7 +88,7 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
 
   @override
   void addAStringData(StringData foundString) {
-    _pathToStrings.removeWhere((element) {
+    _setOfStringData.removeWhere((element) {
       if (element.source == foundString.source) {
         foundString.filesPath.addAll(element.filesPath);
         return true;
@@ -97,7 +96,21 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
         return false;
       }
     });
+    _addToPathToStringsMap(foundString);
+    _setOfStringData.add(foundString);
 
-    _pathToStrings.add(foundString);
+  }
+
+  @override
+  Set<String> get keys => _setOfStringData.map((e)=>e.key).toSet();
+
+  @override
+  PathToStringData get pathToStringData => _pathToString;
+
+  @override
+  void addAllStringData(Set<StringData> foundString) {
+    for(StringData data in foundString){
+      addAStringData(data);
+    }
   }
 }

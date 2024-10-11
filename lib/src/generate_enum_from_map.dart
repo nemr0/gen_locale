@@ -4,10 +4,10 @@ import 'package:dart_style/dart_style.dart';
 
 
 class GenerateEnumFromMap {
-  final DartEmitter emitter = DartEmitter();
-  Set<String> keys = {};
-  void addKey(String value) => keys.add(value);
+  GenerateEnumFromMap({required this.keys});
 
+  final DartEmitter emitter = DartEmitter();
+  Set<String> keys ;
   String generateEnum() {
     if (keys.length == 1) assert(keys.first.isNotEmpty, 'Key cannot be empty');
 

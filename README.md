@@ -13,7 +13,7 @@ A command-line application providing 'genLocale' command to:
 - activation:  
   repo:  ```dart pub global activate --source git https://github.com/nemr0/gen_locale```  
   Pub.dev: **soon**
-- run `genLocale` in your project's directory.
+- run `genlocale` in your project's directory.
 - (alt+shift+f) or (shift+option+f) on vscode or (option+command+l) or (ctrl+alt+l) on android studio to format json file.
 - change json file name to your desired language.
 - Enjoy!
