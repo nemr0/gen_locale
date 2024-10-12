@@ -149,9 +149,14 @@ final SetOfStringData expectedStrings = {
 const String fileOneExample = """
 // should be skipped
 import 'package:flutter/material.dart';
+import 'package:string_literal_finder_annotations/string_literal_finder_annotations.dart';
+
 // 'an example that should be skipped'
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+  void myFunc(@NonNls String nonTranslatable) => nonTranslatable
+  // should be skipped
+  final nonTranslated = myFunc('skipped');
   // should be skipped
   final text='';
   // should be caught. (1)
