@@ -40,13 +40,12 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
 
   GenLocaleStringLiteralFinder();
 
-  init() async {
+  void init()  {
     PrintHelper().version();
     _getReplaceCodeBase();
     basePath = _getBaseUri();
     initExcludes(_getUserExcludes());
     PrintHelper().addProgress('Analyzing Project');
-    await Future.delayed(Duration.zero);
     initFinder();
     textMapBuilder = TextMapBuilderStringLiteral();
   }
@@ -61,9 +60,8 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   }
 
   String _getBaseUri() {
-    String base = PrintHelper().prompt(
-        'Enter Project Path... (default to current)', Directory.current.path,
-        skipFlush: true);
+    String base = PrintHelper().prompt('Enter Project Path... (default to current)', Directory.current.path, skipFlush: true);
+
     if (base.startsWith('./') || base == '.') {
       base = base.replaceFirst('.', Directory.current.path);
     }
@@ -73,21 +71,17 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
     }
     String pubspecPath = p.join(base, 'pubspec.yaml');
     if (!FileManager.fileExists(pubspecPath)) {
-      PrintHelper()
-          .print('Not a Flutter project: pubspec.yaml not found..', color: red);
+      PrintHelper().print('Not a Flutter project: pubspec.yaml not found..', color: red);
       return _getBaseUri();
     }
     final pubspec = loadYaml(File(pubspecPath).readAsStringSync());
     final dependencies = pubspec['dependencies'] as Map?;
 
     if (dependencies == null || !dependencies.containsKey('flutter')) {
-      PrintHelper().print(
-          'Not a Flutter project: flutter dependency not found.',
-          color: red);
+      PrintHelper().print('Not a Flutter project: flutter dependency not found.', color: red);
       return _getBaseUri();
     }
-    PrintHelper().print('Chosen Path: $base',
-        color: cyan, style: styleBold, flushAndRewrite: true);
+    PrintHelper().print('Chosen Path: $base', color: cyan, style: styleBold, flushAndRewrite: true);
     return base;
   }
 

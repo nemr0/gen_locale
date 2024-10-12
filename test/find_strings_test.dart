@@ -1,5 +1,4 @@
 
-import 'dart:io';
 
 import 'package:string_literal_finder/string_literal_finder.dart' as slf;
 
