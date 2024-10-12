@@ -9,7 +9,15 @@ A command-line application providing 'genLocale' command to:
 - generate locale model. (enum with extension)
 - replace all picked strings within code with the model.
 
-## how can I use it?
+## Features:
+
+[x] Gather String(s) from Flutter project(s).
+[ ] Create JSON File with all gathered String(s) and generated key(s).
+[ ] Generate an Enum with extension to apply in code base.
+[ ] Replace All String(s) in code base.
+
+## How can I use it?
+
 - activation:  
   repo:  ```dart pub global activate --source git https://github.com/nemr0/gen_locale```  
   Pub.dev: **soon**
@@ -18,9 +26,10 @@ A command-line application providing 'genLocale' command to:
 - change json file name to your desired language.
 - implement using model for ur fav Localization package.
 - Enjoy!
+
 ## NOTES:
-- This package uses [string_literal_finder](https://github.com/hpoul/string_literal_finder/tree/master/packages/string_literal_finder)  
-  *so it apply for it's rules:
+
+- This package uses [string_literal_finder](https://github.com/hpoul/string_literal_finder/tree/master/packages/string_literal_finder)  and it apply string_literal_finder annotations rules:
   - from string_literal_finder docs:  
     The following dart file:
   ```  
@@ -57,9 +66,9 @@ A command-line application providing 'genLocale' command to:
   $ 
   ```
 
-  # Ignored literal strings
+## Ignored literal strings
 
-  * Any argument annotated with `@NonNls` or `@NonNlsArg()`
-    * Anything which is parsed into the `nonNls` function.
-    * Anything passed to `logging` library `Logger` class.
-    * Any line with a line end comment `// NON-NLS`
+* Any argument annotated with `@NonNls` or `@NonNlsArg()`
+  * Anything which is parsed into the `nonNls` function.
+  * Anything passed to `logging` library `Logger` class.
+  * Any line with a line end comment `// NON-NLS`
