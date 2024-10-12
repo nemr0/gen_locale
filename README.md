@@ -19,7 +19,8 @@ A command-line application providing 'genLocale' command to:
 - implement using model for ur fav Localization package.
 - Enjoy!
 ## NOTES:
-  - This package uses (String Literal Finder)[https://github.com/hpoul/string_literal_finder/tree/master/packages/string_literal_finder], so it apply for it's rules:
+  - This package uses (String Literal Finder)[https://github.com/hpoul/string_literal_finder/tree/master/packages/string_literal_finder]
+  so it apply for it's rules:
     - from string_literal_finder docs:
     The following dart file:
     ```dart
