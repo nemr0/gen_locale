@@ -11,16 +11,16 @@ A command-line application providing 'genLocale' command to:
 
 ## Features:
 
-[x]Gather String(s) from Flutter project(s).  
-[ ]Create JSON File with all gathered String(s) and generated key(s).  
-[ ]Generate an Enum with extension to apply in code base.  
-[ ]Replace All String(s) in code base.  
+- [x]  Gather String(s) from Flutter project(s).  
+- [ ]  Create JSON File with all gathered String(s) and generated key(s).  
+- [ ]  Generate an Enum with extension to apply in code base.  
+- [ ]  Replace All String(s) in code base.  
 
 ## How can I use it?
-
-- activation:  
-  repo:  ```dart pub global activate --source git https://github.com/nemr0/gen_locale```  
-  Pub.dev: **soon**
+### Activation:  
+- repo:  ```dart pub global activate --source git https://github.com/nemr0/gen_locale```  
+- Pub.dev: **soon**  
+### Run
 - run `genlocale` in your project's directory.
 - (alt+shift+f) or (shift+option+f) on vscode or (option+command+l) or (ctrl+alt+l) on android studio to format json file.
 - change json file name to your desired language.
@@ -66,7 +66,7 @@ A command-line application providing 'genLocale' command to:
   $ 
   ```
 
-## Ignored literal strings
+### Ignored literal strings
 
 * Any argument annotated with `@NonNls` or `@NonNlsArg()`
   * Anything which is parsed into the `nonNls` function.
