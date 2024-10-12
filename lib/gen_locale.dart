@@ -15,6 +15,7 @@ import 'package:mason_logger/mason_logger.dart';
 import 'package:string_literal_finder/string_literal_finder.dart' as slf;
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
+
 class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   final bool verbose = PrintHelper().verbose;
 
@@ -61,29 +62,33 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
 
   String _getBaseUri() {
     String base = PrintHelper().prompt(
-        'Enter Project Path... (default to current)', Directory.current.path);
+        'Enter Project Path... (default to current)', Directory.current.path,
+        skipFlush: true);
     if (base.startsWith('./') || base == '.') {
       base = base.replaceFirst('.', Directory.current.path);
     }
     if (!FileManager.directoryExists(base)) {
-      PrintHelper().print('Couldn\'t find Directory',  red);
+      PrintHelper().print('Couldn\'t find Directory', color: red);
       return _getBaseUri();
     }
-    String pubspecPath=p.join(base,'pubspec.yaml');
-    if(!FileManager.fileExists(pubspecPath)){
-      PrintHelper().print('Not a Flutter project: pubspec.yaml not found..',  red);
+    String pubspecPath = p.join(base, 'pubspec.yaml');
+    if (!FileManager.fileExists(pubspecPath)) {
+      PrintHelper()
+          .print('Not a Flutter project: pubspec.yaml not found..', color: red);
       return _getBaseUri();
     }
     final pubspec = loadYaml(File(pubspecPath).readAsStringSync());
     final dependencies = pubspec['dependencies'] as Map?;
 
-    if(dependencies == null || !dependencies.containsKey('flutter')){
-      PrintHelper().print('Not a Flutter project: flutter dependency not found.', red);
+    if (dependencies == null || !dependencies.containsKey('flutter')) {
+      PrintHelper().print(
+          'Not a Flutter project: flutter dependency not found.',
+          color: red);
       return _getBaseUri();
     }
-      PrintHelper().print('Chosen Path: $base',  cyan);
-      return base;
-
+    PrintHelper().print('Chosen Path: $base',
+        color: cyan, style: styleBold, flushAndRewrite: true);
+    return base;
   }
 
   List<String> _getUserExcludes() => PrintHelper().promptAny(
@@ -122,6 +127,9 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
     PrintHelper().completeProgress();
 
     PrintHelper().print(
-        'Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.pathToStringData.keys.length}');
+        'Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.pathToStringData.keys.length}',
+        style: styleBold,
+        color: cyan,
+        addToMessages: true);
   }
 }
