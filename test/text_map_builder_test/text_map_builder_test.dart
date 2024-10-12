@@ -1,51 +1,150 @@
-
 import 'dart:io';
 
 import 'package:gen_locale/src/models/string_data.dart';
 import 'package:gen_locale/src/models/text_map_builder.dart';
 import 'package:gen_locale/src/text_map_builder.dart';
+import 'package:string_literal_finder/string_literal_finder.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../find_strings_test.dart';
 
 main() {
-  group('Testing [TextMapBuilder]',  (){
-
+  group('Testing [TextMapBuilder]', () {
+    /// Testing content of [fileOneExample] should match [expectedStrings]
     test('Test Adding Different StringValues From The Same File', () async {
+      // arrange
       final TextMapBuilder textMapBuilder = TextMapBuilderStringLiteral();
 
-      // arrange -- act
-      SetOfStringData map = await getSetOfStringData(textMapBuilder);
-      print(map);
+      // act
+      SetOfStringData map = await getSetOfStringData(
+          textMapBuilder,
+          fileOneExample,
+          p.join(Directory.current.absolute.path, 'test/mytest.dart'));
+      // assert
       expect(map, expectedStrings);
     });
-    // TODO: Add Multiple File Test.
+
+    /// Testing content of [fileOneExample] should match [expectedStrings] where [fileOneExample] is added two times
+    /// with the same name in different directories.
+    test('Testing Multiple Files with the same name and same content',
+        () async {
+      // arrange
+      final TextMapBuilder textMapBuilder = TextMapBuilderStringLiteral();
+
+      // act
+      SetOfStringData map = await getSetOfStringData(
+          textMapBuilder,
+          fileOneExample,
+          p.join(Directory.current.absolute.path, 'test/mytest.dart'));
+      map.addAll(
+        await getSetOfStringData(
+          textMapBuilder,
+          fileOneExample,
+          p.join(
+            Directory.current.absolute.path,
+            'test/exampleTwo/mytest.dart',
+          ),
+        ),
+      );
+      // assert
+      expect(map, expectedStrings);
+    });
+
     // TODO: Separated String as Test Cases.
   });
-
 }
 
-Future<SetOfStringData> getSetOfStringData(TextMapBuilder textMapBuilder) async {
-  final foundStrings = await findStrings(fileOneExample);
-  for (var foundStringLiteral in foundStrings) {
-    textMapBuilder.addAString(foundStringLiteral);
+Future<SetOfStringData> getSetOfStringData(
+    TextMapBuilder textMapBuilder, String file, String filePath) async {
+  final foundStrings = await findStrings(file, filePath);
+  for (FoundStringLiteral foundStringLiteral in foundStrings) {
+    textMapBuilder.addAFoundStringLiteral(foundStringLiteral);
   }
+
   return textMapBuilder.setOfStringData;
 }
 
 final SetOfStringData expectedStrings = {
-    StringData(source: "'a'", value: "a", withContext: false, variables: null, filesPath: [ p.join(Directory.current.absolute.path, 'test/mytest.dart')], key: 'mytest-0'),
-    StringData(source: "'b'", value: 'b', withContext: false, variables: null, filesPath: [ p.join(Directory.current.absolute.path, 'test/mytest.dart')], key: 'mytest-1'),
-    StringData(source: "'eoeoeo aaa!'", value: "eoeoeo aaa!", withContext: false, variables: null, filesPath: [ p.join(Directory.current.absolute.path, 'test/mytest.dart')], key: 'mytest-2'),
-    StringData(source: "'''eoeoeo!'''", value: 'eoeoeo!', withContext: false, variables: null, filesPath: [ p.join(Directory.current.absolute.path, 'test/mytest.dart')], key: 'mytest-3'),
-    StringData(source: '"ddd"', value: 'ddd', withContext: false, variables: null, filesPath: [ p.join(Directory.current.absolute.path, 'test/mytest.dart')], key: 'mytest-4'),
-    StringData(source: '"\$textFive d"', value: '{} d', withContext: false, variables: ['textFive'], filesPath: [ p.join(Directory.current.absolute.path, 'test/mytest.dart')], key: 'mytest-5'),
-    StringData(source: '"""ddd"""', value: 'ddd', withContext: false, variables: null, filesPath: [ p.join(Directory.current.absolute.path, 'test/mytest.dart')], key: 'mytest-6'),
-    StringData(source: 'r"""ddd\$var"""', value: r'ddd$var', withContext: false, variables: null, filesPath: [ p.join(Directory.current.absolute.path, 'test/mytest.dart')], key: 'mytest-7'),
-    StringData(source: "'Flutter Demo'", value: 'Flutter Demo', withContext: false, variables: null, filesPath: [ p.join(Directory.current.absolute.path, 'test/mytest.dart')], key: 'mytest-8'),
-    StringData(source: "'Flutter Demo Home Page'", value: 'Flutter Demo Home Page', withContext: false, variables: null, filesPath: [ p.join(Directory.current.absolute.path, 'test/mytest.dart')], key: 'mytest-9')
-
+  StringData(
+      source: "'a'",
+      value: "a",
+      withContext: false,
+      variables: null,
+      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      key: 'mytest-0'),
+  StringData(
+      source: "'b'",
+      value: 'b',
+      withContext: false,
+      variables: null,
+      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      key: 'mytest-1'),
+  StringData(
+      source: "'eoeoeo aaa!'",
+      value: "eoeoeo aaa!",
+      withContext: false,
+      variables: null,
+      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      key: 'mytest-2'),
+  StringData(
+      source: "'''eoeoeo!'''",
+      value: 'eoeoeo!',
+      withContext: false,
+      variables: null,
+      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      key: 'mytest-3'),
+  StringData(
+      source: '"ddd"',
+      value: 'ddd',
+      withContext: false,
+      variables: null,
+      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      key: 'mytest-4'),
+  StringData(
+      source: '"\$textFive d"',
+      value: '{} d',
+      withContext: false,
+      variables: ['textFive'],
+      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      key: 'mytest-5'),
+  StringData(
+      source: '"\\\$textFive d"',
+      value: '\\\$textFive d',
+      withContext: false,
+      variables: null,
+      filesPath: [
+        '/Users/omarelnemr/StudioProjects/gen_locale/test/mytest.dart'
+      ],
+      key: 'mytest-6'),
+  StringData(
+      source: '"""ddd"""',
+      value: 'ddd',
+      withContext: false,
+      variables: null,
+      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      key: 'mytest-7'),
+  StringData(
+      source: 'r"""ddd\$var"""',
+      value: r'ddd$var',
+      withContext: false,
+      variables: null,
+      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      key: 'mytest-8'),
+  StringData(
+      source: "'Flutter Demo'",
+      value: 'Flutter Demo',
+      withContext: true,
+      variables: null,
+      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      key: 'mytest-9'),
+  StringData(
+      source: "'Flutter Demo Home Page'",
+      value: 'Flutter Demo Home Page',
+      withContext: true,
+      variables: null,
+      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      key: 'mytest-10')
 };
 const String fileOneExample = """
 // should be skipped
@@ -67,6 +166,7 @@ class MyApp extends StatelessWidget {
   final textSix = "ddd";
     // should be caught with variables
     final textNine= "\$textFive d";
+    final textNine= "\\\$textFive d";
     // should be caught.
   final textSeven = \"\"\"ddd\"\"\";
     // should be caught as string with no variables
@@ -74,12 +174,13 @@ class MyApp extends StatelessWidget {
 
   // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext ctx) {
     return MaterialApp(
-      // should be caught.
+      // should be caught. with context
       title: 'Flutter Demo',
       theme: ThemeData(
         // This is the theme of your application.
+        
         // 'comment'
         // TRY THIS: Try running your application with "flutter run". You'll see
         // the application has a purple toolbar. Then, without quitting the app,
@@ -103,5 +204,3 @@ class MyApp extends StatelessWidget {
   }
 }
 """;
-
-

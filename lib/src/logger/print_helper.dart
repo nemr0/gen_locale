@@ -20,7 +20,7 @@ class PrintHelper {
     ),
   );
 
-  print(String text) => _logger.info(text);
+  print(String text, [AnsiCode color = lightGray,AnsiCode style = lightGray]) => _logger.info(style.wrap(color.wrap(text)));
 
   /// Prints the logo in ./ansi_logo.dart
   void version() => _logger.info(

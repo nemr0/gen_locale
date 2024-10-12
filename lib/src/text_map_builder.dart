@@ -1,4 +1,4 @@
-import 'package:gen_locale/src/file_manager.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:gen_locale/src/models/string_data.dart';
 import 'package:gen_locale/src/models/text_map_builder.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
@@ -34,19 +34,18 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
   }
 
   @override
-  void addAString(var foundString) {
-    if (foundString is! FoundStringLiteral?) {
-      throw ('Error: FoundString is not FoundStringLiteral');
-    }
-    if (foundString == null) return ;
+  void addAFoundStringLiteral(FoundStringLiteral foundString) {
+
     String source = foundString.stringLiteral.toSource();
     if (valueFromSource(source).isEmpty) return ;
+    if( setOfStringData.where((e)=>e.source==source).isNotEmpty)return;
     final matched = matchVariables(source);
+
     StringData stringData = StringData(
         source: source,
         value: valueFromSource(matched.$1),
         variables: matched.$2,
-        withContext: containsContext(foundString.filePath),
+        withContext: containsContext(foundString.stringLiteral.parent),
         filesPath: [foundString.filePath], key: _getKeyFor(foundString.filePath));
     addAStringData(stringData);
   }
@@ -61,10 +60,40 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
   }
 
   @override
-  bool containsContext(String path) {
-    if (!FileManager.fileExists(path)) return false;
-    return RegExp(r'''import\s*['"](package:flutter\/(widgets|cupertino|material)\.dart)['"]\s*;''')
-        .hasMatch(FileManager.getContents(path));
+  bool containsContext(AstNode? node) {
+    AstNode? parent = node?.parent;
+    while (parent != null) {
+      if (parent is MethodDeclaration &&
+          parent.parameters?.parameters != null &&
+          parent.parameters!.parameters.isNotEmpty) {
+        MethodDeclaration method = parent;
+        // Check if any of the parameters is of type 'BuildContext'
+        bool canAccessContext = method.parameters!.parameters.any((param) {
+          TypeAnnotation? paramType;
+
+          if (param is SimpleFormalParameter) {
+            paramType = param.type;
+          } else if (param is DefaultFormalParameter) {
+            // For parameters with default values
+            var innerParam = param.parameter;
+            if (innerParam is SimpleFormalParameter) {
+              paramType = innerParam.type;
+            }
+          }
+
+          String? typeName = paramType?.toSource();
+
+          // Remove any prefixes (e.g., 'ui.BuildContext')
+          String? unprefixedTypeName = typeName?.split('.').last;
+
+          return unprefixedTypeName == 'BuildContext';
+        });
+
+        return canAccessContext;
+      }
+      parent = parent.parent;
+    }
+    return false;
   }
 
   @override
@@ -75,7 +104,7 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
     }
     List<String> variables = [];
     // all matches for all variables
-    final matches = RegExp(r"""\$\{?([a-zA-Z_][a-zA-Z0-9_\.]*)\}?""").allMatches(source);
+    final matches = RegExp(r"""(?<!\\)\$\{?([a-zA-Z_][a-zA-Z0-9_\.]*)\}?""").allMatches(source);
     for (var match in matches) {
       String? matchString = match.group(0);
       if (matchString == null) continue;

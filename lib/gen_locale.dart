@@ -11,8 +11,10 @@ import 'package:gen_locale/src/models/text_map_builder.dart';
 import 'package:gen_locale/src/stack_exception.dart';
 import 'package:gen_locale/src/text_map_builder.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
+import 'package:mason_logger/mason_logger.dart';
 import 'package:string_literal_finder/string_literal_finder.dart' as slf;
-
+import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   final bool verbose = PrintHelper().verbose;
 
@@ -60,16 +62,28 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   String _getBaseUri() {
     String base = PrintHelper().prompt(
         'Enter Project Path... (default to current)', Directory.current.path);
-    if (base.startsWith('./')) {
+    if (base.startsWith('./') || base == '.') {
       base = base.replaceFirst('.', Directory.current.path);
     }
-    if (FileManager.directoryExists(base)) {
-      return base;
-    } else {
-      PrintHelper().print(
-          'Couldn\'t find Directory, Switching to ${Directory.current.path}');
-      return Directory.current.path;
+    if (!FileManager.directoryExists(base)) {
+      PrintHelper().print('Couldn\'t find Directory',  red);
+      return _getBaseUri();
     }
+    String pubspecPath=p.join(base,'pubspec.yaml');
+    if(!FileManager.fileExists(pubspecPath)){
+      PrintHelper().print('Not a Flutter project: pubspec.yaml not found..',  red);
+      return _getBaseUri();
+    }
+    final pubspec = loadYaml(File(pubspecPath).readAsStringSync());
+    final dependencies = pubspec['dependencies'] as Map?;
+
+    if(dependencies == null || !dependencies.containsKey('flutter')){
+      PrintHelper().print('Not a Flutter project: flutter dependency not found.', red);
+      return _getBaseUri();
+    }
+      PrintHelper().print('Chosen Path: $base',  cyan);
+      return base;
+
   }
 
   List<String> _getUserExcludes() => PrintHelper().promptAny(
@@ -80,7 +94,7 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
       List<Map<String, dynamic>> data = await Isolate.run(() async {
         List<slf.FoundStringLiteral> a = await finder.start();
         for (var found in a) {
-          textMapBuilder.addAString(found);
+          textMapBuilder.addAFoundStringLiteral(found);
         }
         return textMapBuilder.setOfStringData.map((e) => e.toMap()).toList();
       });
