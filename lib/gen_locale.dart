@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:gen_locale/src/file_manager.dart';
+import 'package:gen_locale/src/generate_json_map.dart';
 import 'package:gen_locale/src/logger/exceptions.dart';
 import 'package:gen_locale/src/models/exclude_path_checker_impl/exclude_path_that_contains.dart';
 import 'package:gen_locale/src/models/exclude_path_checker_impl/include_only_dart_files.dart';
@@ -41,7 +42,9 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   GenLocaleStringLiteralFinder();
 
   void init()  {
+
     PrintHelper().version();
+
     _getReplaceCodeBase();
     basePath = _getBaseUri();
     initExcludes(_getUserExcludes());
@@ -104,7 +107,33 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
         print(textMapBuilder.setOfStringData);
         print('--------------------------------------------');
       }
+      PrintHelper().completeProgress();
+
+      PrintHelper().print(
+          'Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.pathToStringData.keys.length}',
+          style: styleBold,
+          color: cyan,
+          addToMessages: true);
     } catch (e, s) {
+      if (verbose) {
+        print(e);
+        print(s);
+      }
+      throw (StackException(
+          message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
+    }
+  }
+
+  _generateJsonFile(){
+    try {
+      String jsonPath = PrintHelper().prompt(
+        'Where do you want to save your JSON file?',
+        p.join(basePath, 'RESOURCES.json'),);
+      PrintHelper().addProgress('Generating JSON File');
+
+      JsonMap.generateJsonFileFromMap(jsonPath, textMapBuilder.jsonMap);
+      PrintHelper().completeProgress();
+    } catch (e,s){
       if (verbose) {
         print(e);
         print(s);
@@ -117,13 +146,7 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   @override
   Future<void> run() async {
     await _analyzeProject();
+    _generateJsonFile();
 
-    PrintHelper().completeProgress();
-
-    PrintHelper().print(
-        'Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.pathToStringData.keys.length}',
-        style: styleBold,
-        color: cyan,
-        addToMessages: true);
   }
 }

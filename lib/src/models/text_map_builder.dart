@@ -8,6 +8,7 @@ abstract class TextMapBuilder {
   PathToStringData get pathToStringData;
   /// All Keys for ENUM GENERATION.
   Set<String> get keys;
+  Map<String,dynamic> get jsonMap;
   /// Extracts variables within the source text
   /// returns source replaced all variables with {}
   /// and a list of string with all variables names with no invocation ($,${})

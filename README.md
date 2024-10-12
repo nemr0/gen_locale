@@ -12,7 +12,7 @@ A command-line application providing 'genLocale' command to:
 ## Features:
 
 - [x]  Gather String(s) from Flutter project(s).  
-- [ ]  Create JSON File with all gathered String(s) and generated key(s).  
+- [x]  Create JSON File with all gathered String(s) and generated key(s).  
 - [ ]  Generate an Enum with extension to apply in code base.  
 - [ ]  Replace All String(s) in code base.  
 

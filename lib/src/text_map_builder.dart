@@ -7,7 +7,11 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
   @override
   SetOfStringData get setOfStringData => _setOfStringData;
 
+  @override
+  PathToStringData get pathToStringData => _pathToString;
+
   final SetOfStringData _setOfStringData = {};
+
   final PathToStringData _pathToString = {};
 
 
@@ -133,7 +137,8 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
   Set<String> get keys => _setOfStringData.map((e)=>e.key).toSet();
 
   @override
-  PathToStringData get pathToStringData => _pathToString;
+  Map<String,dynamic> get jsonMap => Map<String,dynamic>.fromEntries(_setOfStringData.map((e)=>MapEntry(e.key, e.value)));
+
 
   @override
   void addAllStringData(Set<StringData> foundString) {
