@@ -9,7 +9,6 @@ class GenerateEnumFromMap {
   final DartEmitter emitter = DartEmitter();
   Set<String> keys ;
   String generateEnum() {
-    if (keys.length == 1) assert(keys.first.isNotEmpty, 'Key cannot be empty');
 
     final enumClass = Enum((builder) => builder
       ..name = 'Keys'
@@ -19,7 +18,6 @@ class GenerateEnumFromMap {
       ..name = 'JsonStringMapper'
       ..methods.add(Method((builder) => builder
         ..name = 'get'
-        ..lambda = true
         ..body = Code('''
     // Add your desired localization package implementation
     ''')))

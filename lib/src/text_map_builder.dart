@@ -25,13 +25,17 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
       }
     }
   }
-  String _getKeyFor(String filePath){
+  String _getKeyFor(String filePath,String source){
     // {file_name}-{index}
     String key= '${filePath.split('/').last.split('.').first}-${_pathToString[filePath]?.length??0}';
-    // if key exists
-    if(_setOfStringData.where((element) => element.key==key).isNotEmpty){
+    // if key exists this wont be empty:
+    final keyExistsList =_setOfStringData.where((element) => element.key==key);
+    if(keyExistsList.isNotEmpty){
+      if(keyExistsList.first.source==source){
+        return key;
+      }
       // recursive to paths
-      key = _getKeyFor(key);
+      key = _getKeyFor(key,source);
     }
       return key;
 
@@ -39,10 +43,19 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
 
   @override
   void addAFoundStringLiteral(FoundStringLiteral foundString) {
-
+    Set<String>  filesPath={foundString.filePath};
     String source = foundString.stringLiteral.toSource();
     if (valueFromSource(source).isEmpty) return ;
-    if( setOfStringData.where((e)=>e.source==source).isNotEmpty)return;
+    final withSamePathAndSource =setOfStringData.where((element) => element.filesPath.contains(foundString.filePath) && element.source==source);
+
+
+    final withSameSource=setOfStringData.where((e)=>e.source==source);
+    if(withSamePathAndSource.isNotEmpty )return;
+    if( withSameSource.isNotEmpty) {
+      for(StringData data in withSameSource){
+        filesPath.addAll(data.filesPath);
+      }
+    }
     final matched = matchVariables(source);
 
     StringData stringData = StringData(
@@ -50,7 +63,7 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
         value: valueFromSource(matched.$1),
         variables: matched.$2,
         withContext: containsContext(foundString.stringLiteral.parent),
-        filesPath: [foundString.filePath], key: _getKeyFor(foundString.filePath));
+        filesPath: filesPath, key: _getKeyFor(foundString.filePath,source));
     addAStringData(stringData);
   }
 

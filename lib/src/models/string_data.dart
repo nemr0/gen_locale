@@ -8,7 +8,7 @@ class StringData {
   final String source;
   final String value;
   final bool withContext;
-  final List<String> filesPath;
+  final Set<String> filesPath;
   final String key;
 
   const StringData({

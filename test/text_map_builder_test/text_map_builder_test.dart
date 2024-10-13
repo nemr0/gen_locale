@@ -17,12 +17,15 @@ main() {
       final TextMapBuilder textMapBuilder = TextMapBuilderStringLiteral();
 
       // act
-      SetOfStringData map = await getSetOfStringData(
+      await getSetOfStringData(
           textMapBuilder,
           fileOneExample,
           p.join(Directory.current.absolute.path, 'test/mytest.dart'));
       // assert
-      expect(map, expectedStrings);
+      expect(textMapBuilder.setOfStringData, expectedStrings({
+        p.join(Directory.current.absolute.path, 'test/mytest.dart'),
+
+      }));
     });
 
     /// Testing content of [fileOneExample] should match [expectedStrings] where [fileOneExample] is added two times
@@ -33,11 +36,11 @@ main() {
       final TextMapBuilder textMapBuilder = TextMapBuilderStringLiteral();
 
       // act
-      SetOfStringData map = await getSetOfStringData(
+      await getSetOfStringData(
           textMapBuilder,
           fileOneExample,
           p.join(Directory.current.absolute.path, 'test/mytest.dart'));
-      map.addAll(
+
         await getSetOfStringData(
           textMapBuilder,
           fileOneExample,
@@ -45,104 +48,101 @@ main() {
             Directory.current.absolute.path,
             'test/exampleTwo/mytest.dart',
           ),
-        ),
-      );
+        );
+        print(textMapBuilder.setOfStringData);
       // assert
-      expect(map, expectedStrings);
+      expect(textMapBuilder.setOfStringData, expectedStrings({   p.join(Directory.current.absolute.path, 'test/exampleTwo/mytest.dart',), p.join(Directory.current.absolute.path, 'test/mytest.dart'),}));
     });
 
   });
 }
 
-Future<SetOfStringData> getSetOfStringData(
+Future<void> getSetOfStringData(
     TextMapBuilder textMapBuilder, String file, String filePath) async {
   final foundStrings = await findStrings(file, filePath);
   for (FoundStringLiteral foundStringLiteral in foundStrings) {
     textMapBuilder.addAFoundStringLiteral(foundStringLiteral);
   }
 
-  return textMapBuilder.setOfStringData;
 }
 
-final SetOfStringData expectedStrings = {
+ SetOfStringData expectedStrings(Set<String> filesPath) => {
   StringData(
       source: "'a'",
       value: "a",
       withContext: false,
       variables: null,
-      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      filesPath: filesPath,
       key: 'mytest-0'),
   StringData(
       source: "'b'",
       value: 'b',
       withContext: false,
       variables: null,
-      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      filesPath: filesPath,
       key: 'mytest-1'),
   StringData(
       source: "'eoeoeo aaa!'",
       value: "eoeoeo aaa!",
       withContext: false,
       variables: null,
-      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      filesPath: filesPath,
       key: 'mytest-2'),
   StringData(
       source: "'''eoeoeo!'''",
       value: 'eoeoeo!',
       withContext: false,
       variables: null,
-      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      filesPath: filesPath,
       key: 'mytest-3'),
   StringData(
       source: '"ddd"',
       value: 'ddd',
       withContext: false,
       variables: null,
-      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      filesPath: filesPath,
       key: 'mytest-4'),
   StringData(
       source: '"\$textFive d"',
       value: '{} d',
       withContext: false,
       variables: ['textFive'],
-      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      filesPath: filesPath,
       key: 'mytest-5'),
   StringData(
       source: '"\\\$textFive d"',
       value: '\\\$textFive d',
       withContext: false,
       variables: null,
-      filesPath: [
-        '/Users/omarelnemr/StudioProjects/gen_locale/test/mytest.dart'
-      ],
+      filesPath:filesPath,
       key: 'mytest-6'),
   StringData(
       source: '"""ddd"""',
       value: 'ddd',
       withContext: false,
       variables: null,
-      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      filesPath: filesPath,
       key: 'mytest-7'),
   StringData(
       source: 'r"""ddd\$var"""',
       value: r'ddd$var',
       withContext: false,
       variables: null,
-      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      filesPath: filesPath,
       key: 'mytest-8'),
   StringData(
       source: "'Flutter Demo'",
       value: 'Flutter Demo',
       withContext: true,
       variables: null,
-      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      filesPath: filesPath,
       key: 'mytest-9'),
   StringData(
       source: "'Flutter Demo Home Page'",
       value: 'Flutter Demo Home Page',
       withContext: true,
       variables: null,
-      filesPath: [p.join(Directory.current.absolute.path, 'test/mytest.dart')],
+      filesPath: filesPath,
       key: 'mytest-10')
 };
 const String fileOneExample = """
