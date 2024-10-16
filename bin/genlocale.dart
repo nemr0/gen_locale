@@ -56,7 +56,7 @@ Future<void> main(List<String> arguments) async {
     }
 
     final genLocale=GenLocaleStringLiteralFinder();
-     genLocale.init();
+     // genLocale.init();
     await genLocale.run();
   } catch(e,s) {
     PrintHelper().progressFailed('$e\n$s');

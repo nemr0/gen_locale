@@ -18,7 +18,7 @@ class PrintHelper {
 
   final Stopwatch _stopwatch = Stopwatch();
   bool verbose = false;
-
+  String packageName = '';
   final Logger _logger = Logger(
     theme: LogTheme(
       success: (s) => green.wrap(s),

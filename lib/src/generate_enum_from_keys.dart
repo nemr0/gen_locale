@@ -3,11 +3,12 @@ import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 
 
-class GenerateEnumFromMap {
-  GenerateEnumFromMap({required this.keys});
+class GenerateEnumFromKeys {
+  GenerateEnumFromKeys( {required this.generatedFilePath,required this.keys});
 
   final DartEmitter emitter = DartEmitter();
-  Set<String> keys ;
+  final Set<String> keys ;
+  final String generatedFilePath;
   String generateEnum() {
 
     final enumClass = Enum((builder) => builder
@@ -20,11 +21,16 @@ class GenerateEnumFromMap {
         ..name = 'get'
         ..body = Code('''
     // Add your desired localization package implementation
+    // you get access to name which is key itself.
+    return name;
     ''')))
       ..on = Reference('Keys'));
+
     return DartFormatter().format('''
       // ignore_for_file: constant_identifier_names
     ${extension.accept(emitter)}
+     
+  
     ${enumClass.accept(emitter)}''');
   }
 

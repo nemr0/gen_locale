@@ -4,6 +4,7 @@ import 'package:gen_locale/src/models/text_map_builder.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
 
 class TextMapBuilderStringLiteral extends TextMapBuilder {
+
   @override
   SetOfStringData get setOfStringData => _setOfStringData;
 
@@ -13,7 +14,6 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
   final SetOfStringData _setOfStringData = {};
 
   final PathToStringData _pathToString = {};
-
 
 
   _addToPathToStringsMap(StringData data) {
@@ -26,8 +26,8 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
     }
   }
   String _getKeyFor(String filePath,String source){
-    // {file_name}-{index}
-    String key= '${filePath.split('/').last.split('.').first}-${_pathToString[filePath]?.length??0}';
+    // {file_name}_{index}
+    String key= '${filePath.split('/').last.split('.').first}_${_pathToString[filePath]?.length??0}';
     // if key exists this wont be empty:
     final keyExistsList =_setOfStringData.where((element) => element.key==key);
     if(keyExistsList.isNotEmpty){
