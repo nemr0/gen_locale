@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:gen_locale/src/models/string_data.dart';
 import 'package:gen_locale/src/models/text_map_builder.dart';
-import 'package:gen_locale/src/text_map_builder.dart';
+import 'package:gen_locale/src/found_strings_analyzer.dart';
+import 'package:gen_locale/src/string_processor.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
@@ -15,7 +16,7 @@ main() {
     test('Test Adding Different StringValues From The Same File', () async {
       // arrange
       final FoundedStringsAnalyzer foundStringsAnalyzer =
-          FoundedStringsAnalyzer();
+          FoundedStringsAnalyzer(stringProcessor: StringProcessor());
 
       // act
       await getSetOfStringData(foundStringsAnalyzer, fileOneExample,
@@ -33,7 +34,8 @@ main() {
     test('Testing Multiple Files with the same name and same content',
         () async {
       // arrange
-      final FoundedStringsAnalyzer foundStrings = FoundedStringsAnalyzer();
+      final FoundedStringsAnalyzer foundStrings =
+          FoundedStringsAnalyzer(stringProcessor: StringProcessor());
 
       // act
       await getSetOfStringData(foundStrings, fileOneExample,

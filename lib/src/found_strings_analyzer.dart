@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:gen_locale/src/models/string_data.dart';
 import 'package:gen_locale/src/models/text_map_builder.dart';
+import 'package:gen_locale/src/string_processor.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
 
 class FoundedStringsAnalyzer {
@@ -11,6 +12,12 @@ class FoundedStringsAnalyzer {
   final SetOfStringData _setOfStringData = {};
 
   final PathToStringData _pathToString = {};
+
+  final StringProcessor _stringProcessor;
+
+  // Injecting StringProcessor via constructor
+  FoundedStringsAnalyzer({required StringProcessor stringProcessor})
+      : _stringProcessor = stringProcessor;
 
   _addToPathToStringsMap(StringData data) {
     for (String path in data.filesPath) {
@@ -42,7 +49,7 @@ class FoundedStringsAnalyzer {
   void addAFoundStringLiteral(FoundStringLiteral foundString) {
     Set<String> filesPath = {foundString.filePath};
     String source = foundString.stringLiteral.toSource();
-    if (valueFromSource(source).isEmpty) return;
+    if (_stringProcessor.valueFromSource(source).isEmpty) return;
     final withSamePathAndSource = setOfStringData.where((element) =>
         element.filesPath.contains(foundString.filePath) &&
         element.source == source);
@@ -54,28 +61,16 @@ class FoundedStringsAnalyzer {
         filesPath.addAll(data.filesPath);
       }
     }
-    final matched = matchVariables(source);
+    final matched = _stringProcessor.matchVariables(source);
 
     StringData stringData = StringData(
         source: source,
-        value: valueFromSource(matched.$1),
+        value: _stringProcessor.valueFromSource(matched.$1),
         variables: matched.$2,
         withContext: containsContext(foundString.stringLiteral.parent),
         filesPath: filesPath,
         key: _getKeyFor(foundString.filePath, source));
     addAStringData(stringData);
-  }
-
-  String valueFromSource(String source) {
-    // if starts as a raw string
-    if (source.startsWith("r'") || source.startsWith('r"')) {
-      return source
-          .replaceFirst("r'", '')
-          .replaceFirst('r"', '')
-          .replaceAll("'", '')
-          .replaceAll('"', '');
-    }
-    return source.replaceAll('\'', '').replaceAll('"', '');
   }
 
   bool containsContext(AstNode? node) {
@@ -112,31 +107,6 @@ class FoundedStringsAnalyzer {
       parent = parent.parent;
     }
     return false;
-  }
-
-  (String replacedSource, List<String>? variables) matchVariables(
-      String source) {
-    // skips no vars strings and raw strings
-    if (source.contains('\$') == false ||
-        source.startsWith('r"') ||
-        source.startsWith("r'")) {
-      return (source, null);
-    }
-    List<String> variables = [];
-    // all matches for all variables
-    final matches = RegExp(r"""(?<!\\)\$\{?([a-zA-Z_][a-zA-Z0-9_\.]*)\}?""")
-        .allMatches(source);
-    for (var match in matches) {
-      String? matchString = match.group(0);
-      if (matchString == null) continue;
-      variables.add(match.group(1) ??
-          matchString
-              .replaceFirst("\${", "")
-              .replaceFirst("}", "")
-              .replaceFirst("\$", ""));
-      source = source.replaceFirst(matchString, "{}");
-    }
-    return (source, variables.isEmpty ? null : variables);
   }
 
   void addAStringData(StringData foundString) {

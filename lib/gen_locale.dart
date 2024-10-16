@@ -11,8 +11,9 @@ import 'package:gen_locale/src/models/gen_locale_abstract.dart';
 import 'package:gen_locale/src/models/string_data.dart';
 import 'package:gen_locale/src/models/text_map_builder.dart';
 import 'package:gen_locale/src/stack_exception.dart';
-import 'package:gen_locale/src/text_map_builder.dart';
+import 'package:gen_locale/src/found_strings_analyzer.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
+import 'package:gen_locale/src/string_processor.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:string_literal_finder/string_literal_finder.dart' as slf;
 import 'package:path/path.dart' as p;
@@ -108,7 +109,8 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
       initExcludes(_getUserExcludes());
       PrintHelper().addProgress('Analyzing Project');
       initFinder();
-      foundedStringsAnalyzer = FoundedStringsAnalyzer();
+      foundedStringsAnalyzer =
+          FoundedStringsAnalyzer(stringProcessor: StringProcessor());
       List<Map<String, dynamic>> data = await Isolate.run(() async {
         List<slf.FoundStringLiteral> a = await finder.start();
         for (var found in a) {
