@@ -1,6 +1,8 @@
 // ignore_for_file: constant_identifier_names
+import 'package:flutter/widgets.dart';
+
 extension JsonStringMapper on Keys {
-  get() {
+  get({BuildContext? context, List<dynamic>? args}) {
     // Add your desired localization package implementation
     // you get access to name which is key itself.
     return name;

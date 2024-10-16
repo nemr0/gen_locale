@@ -164,7 +164,7 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
     );
     filePath = _pointersToPathWithMimeType(filePath,mimeType: 'dart');
     if(!notFirstRun) PrintHelper().addProgress('Generating ENUM KEYS File');
-    generateEnumFromKeys = GenerateEnumFromKeys(generatedFilePath: filePath, keys: textMapBuilder.keys);
+    generateEnumFromKeys = GenerateEnumFromKeys( keys: textMapBuilder.keys);
     String generatedEnumAndExtension = generateEnumFromKeys.generateEnum();
     try {
       FileManager.writeFile(filePath, generatedEnumAndExtension);
