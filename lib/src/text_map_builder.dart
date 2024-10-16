@@ -3,18 +3,14 @@ import 'package:gen_locale/src/models/string_data.dart';
 import 'package:gen_locale/src/models/text_map_builder.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
 
-class TextMapBuilderStringLiteral extends TextMapBuilder {
-
-  @override
+class FoundedStringsAnalyzer {
   SetOfStringData get setOfStringData => _setOfStringData;
 
-  @override
   PathToStringData get pathToStringData => _pathToString;
 
   final SetOfStringData _setOfStringData = {};
 
   final PathToStringData _pathToString = {};
-
 
   _addToPathToStringsMap(StringData data) {
     for (String path in data.filesPath) {
@@ -25,34 +21,36 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
       }
     }
   }
-  String _getKeyFor(String filePath,String source){
+
+  String _getKeyFor(String filePath, String source) {
     // {file_name}_{index}
-    String key= '${filePath.split('/').last.split('.').first}_${_pathToString[filePath]?.length??0}';
+    String key =
+        '${filePath.split('/').last.split('.').first}_${_pathToString[filePath]?.length ?? 0}';
     // if key exists this wont be empty:
-    final keyExistsList =_setOfStringData.where((element) => element.key==key);
-    if(keyExistsList.isNotEmpty){
-      if(keyExistsList.first.source==source){
+    final keyExistsList =
+        _setOfStringData.where((element) => element.key == key);
+    if (keyExistsList.isNotEmpty) {
+      if (keyExistsList.first.source == source) {
         return key;
       }
       // recursive to paths
-      key = _getKeyFor(key,source);
+      key = _getKeyFor(key, source);
     }
-      return key;
-
+    return key;
   }
 
-  @override
   void addAFoundStringLiteral(FoundStringLiteral foundString) {
-    Set<String>  filesPath={foundString.filePath};
+    Set<String> filesPath = {foundString.filePath};
     String source = foundString.stringLiteral.toSource();
-    if (valueFromSource(source).isEmpty) return ;
-    final withSamePathAndSource =setOfStringData.where((element) => element.filesPath.contains(foundString.filePath) && element.source==source);
+    if (valueFromSource(source).isEmpty) return;
+    final withSamePathAndSource = setOfStringData.where((element) =>
+        element.filesPath.contains(foundString.filePath) &&
+        element.source == source);
 
-
-    final withSameSource=setOfStringData.where((e)=>e.source==source);
-    if(withSamePathAndSource.isNotEmpty )return;
-    if( withSameSource.isNotEmpty) {
-      for(StringData data in withSameSource){
+    final withSameSource = setOfStringData.where((e) => e.source == source);
+    if (withSamePathAndSource.isNotEmpty) return;
+    if (withSameSource.isNotEmpty) {
+      for (StringData data in withSameSource) {
         filesPath.addAll(data.filesPath);
       }
     }
@@ -63,20 +61,23 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
         value: valueFromSource(matched.$1),
         variables: matched.$2,
         withContext: containsContext(foundString.stringLiteral.parent),
-        filesPath: filesPath, key: _getKeyFor(foundString.filePath,source));
+        filesPath: filesPath,
+        key: _getKeyFor(foundString.filePath, source));
     addAStringData(stringData);
   }
 
-  @override
   String valueFromSource(String source) {
     // if starts as a raw string
     if (source.startsWith("r'") || source.startsWith('r"')) {
-      return source.replaceFirst("r'", '').replaceFirst('r"', '').replaceAll("'", '').replaceAll('"', '');
+      return source
+          .replaceFirst("r'", '')
+          .replaceFirst('r"', '')
+          .replaceAll("'", '')
+          .replaceAll('"', '');
     }
     return source.replaceAll('\'', '').replaceAll('"', '');
   }
 
-  @override
   bool containsContext(AstNode? node) {
     AstNode? parent = node?.parent;
     while (parent != null) {
@@ -113,25 +114,31 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
     return false;
   }
 
-  @override
-  (String replacedSource, List<String>? variables) matchVariables(String source) {
+  (String replacedSource, List<String>? variables) matchVariables(
+      String source) {
     // skips no vars strings and raw strings
-    if (source.contains('\$') == false || source.startsWith('r"') || source.startsWith("r'")) {
+    if (source.contains('\$') == false ||
+        source.startsWith('r"') ||
+        source.startsWith("r'")) {
       return (source, null);
     }
     List<String> variables = [];
     // all matches for all variables
-    final matches = RegExp(r"""(?<!\\)\$\{?([a-zA-Z_][a-zA-Z0-9_\.]*)\}?""").allMatches(source);
+    final matches = RegExp(r"""(?<!\\)\$\{?([a-zA-Z_][a-zA-Z0-9_\.]*)\}?""")
+        .allMatches(source);
     for (var match in matches) {
       String? matchString = match.group(0);
       if (matchString == null) continue;
-      variables.add(match.group(1) ?? matchString.replaceFirst("\${", "").replaceFirst("}", "").replaceFirst("\$", ""));
+      variables.add(match.group(1) ??
+          matchString
+              .replaceFirst("\${", "")
+              .replaceFirst("}", "")
+              .replaceFirst("\$", ""));
       source = source.replaceFirst(matchString, "{}");
     }
     return (source, variables.isEmpty ? null : variables);
   }
 
-  @override
   void addAStringData(StringData foundString) {
     _setOfStringData.removeWhere((element) {
       if (element.source == foundString.source) {
@@ -143,19 +150,15 @@ class TextMapBuilderStringLiteral extends TextMapBuilder {
     });
     _addToPathToStringsMap(foundString);
     _setOfStringData.add(foundString);
-
   }
 
-  @override
-  Set<String> get keys => _setOfStringData.map((e)=>e.key).toSet();
+  Set<String> get keys => _setOfStringData.map((e) => e.key).toSet();
 
-  @override
-  Map<String,dynamic> get jsonMap => Map<String,dynamic>.fromEntries(_setOfStringData.map((e)=>MapEntry(e.key, e.value)));
+  Map<String, dynamic> get jsonMap => Map<String, dynamic>.fromEntries(
+      _setOfStringData.map((e) => MapEntry(e.key, e.value)));
 
-
-  @override
   void addAllStringData(Set<StringData> foundString) {
-    for(StringData data in foundString){
+    for (StringData data in foundString) {
       addAStringData(data);
     }
   }

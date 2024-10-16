@@ -24,20 +24,22 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   /// A Map of File Path as a key with value of List of [StringData]
   /// Used For Replacing texts file by file.
 
-  SetOfStringData get setOfStringData => textMapBuilder.setOfStringData;
+  SetOfStringData get setOfStringData => foundedStringsAnalyzer.setOfStringData;
   int lengthOfFoundStrings = 0;
   late GenerateEnumFromKeys generateEnumFromKeys;
 
-  initFinder() => finder = slf.StringLiteralFinder(basePath: basePath, excludePaths: excludes);
+  initFinder() => finder =
+      slf.StringLiteralFinder(basePath: basePath, excludePaths: excludes);
 
-   late final slf.StringLiteralFinder finder;
+  late final slf.StringLiteralFinder finder;
 
   initExcludes(List<String> excludeStrings) {
     excludes = [
       slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),
       IncludeOnlyDartFiles(),
       ...slf.ExcludePathChecker.excludePathDefaults,
-      ...excludeStrings.map<ExcludePathThatContains>((e) => ExcludePathThatContains(contains: e)),
+      ...excludeStrings.map<ExcludePathThatContains>(
+          (e) => ExcludePathThatContains(contains: e)),
     ];
   }
 
@@ -46,18 +48,18 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
 
     // _getReplaceCodeBase();
   }
-  String _pointersToPathWithMimeType(String path, {String? mimeType}){
+  String _pointersToPathWithMimeType(String path, {String? mimeType}) {
     if (path.startsWith('./') || path == '.') {
       path = path.replaceFirst('.', Directory.current.path);
-    }
-    else if(path.startsWith('../') || path == '..'){
+    } else if (path.startsWith('../') || path == '..') {
       path = path.replaceFirst('..', Directory.current.parent.path);
     }
-    if(mimeType != null && path.split('/').last.split('.').last!=mimeType){
-      path='$path.$mimeType';
+    if (mimeType != null && path.split('/').last.split('.').last != mimeType) {
+      path = '$path.$mimeType';
     }
     return path;
   }
+
   late final bool replaceCodeBase;
 
   // _getReplaceCodeBase() {
@@ -66,27 +68,34 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
   // }
 
   String _getBaseUri() {
-    String base =
-        PrintHelper().prompt('Enter Project Path... (default to current)', Directory.current.path, skipFlush: true);
+    String base = PrintHelper().prompt(
+        'Enter Project Path... (default to current)', Directory.current.path,
+        skipFlush: true);
 
-    base = _pointersToPathWithMimeType(base,);
+    base = _pointersToPathWithMimeType(
+      base,
+    );
     if (!FileManager.directoryExists(base)) {
       PrintHelper().print('Couldn\'t find Directory', color: red);
       return _getBaseUri();
     }
     String pubspecPath = p.join(base, 'pubspec.yaml');
     if (!FileManager.fileExists(pubspecPath)) {
-      PrintHelper().print('Not a Flutter project: pubspec.yaml not found..', color: red);
+      PrintHelper()
+          .print('Not a Flutter project: pubspec.yaml not found..', color: red);
       return _getBaseUri();
     }
     final pubspec = loadYaml(File(pubspecPath).readAsStringSync());
     final dependencies = pubspec['dependencies'] as Map?;
     PrintHelper().packageName = pubspec['name'];
     if (dependencies == null || !dependencies.containsKey('flutter')) {
-      PrintHelper().print('Not a Flutter project: flutter dependency not found.', color: red);
+      PrintHelper().print(
+          'Not a Flutter project: flutter dependency not found.',
+          color: red);
       return _getBaseUri();
     }
-    PrintHelper().print('Chosen Path: $base', color: cyan, style: styleBold, flushAndRewrite: true);
+    PrintHelper().print('Chosen Path: $base',
+        color: cyan, style: styleBold, flushAndRewrite: true);
     return base;
   }
 
@@ -99,16 +108,16 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
       initExcludes(_getUserExcludes());
       PrintHelper().addProgress('Analyzing Project');
       initFinder();
-      textMapBuilder = TextMapBuilderStringLiteral();
+      foundedStringsAnalyzer = FoundedStringsAnalyzer();
       List<Map<String, dynamic>> data = await Isolate.run(() async {
         List<slf.FoundStringLiteral> a = await finder.start();
         for (var found in a) {
-          textMapBuilder.addAFoundStringLiteral(found);
+          foundedStringsAnalyzer.addAFoundStringLiteral(found);
         }
         return setOfStringData.map((e) => e.toMap()).toList();
       });
       Set<StringData> dataSet = data.map((e) => StringData.fromJson(e)).toSet();
-      textMapBuilder.addAllStringData(dataSet);
+      foundedStringsAnalyzer.addAllStringData(dataSet);
       lengthOfFoundStrings = dataSet.length;
       if (verbose) {
         PrintHelper().print(setOfStringData.toString());
@@ -117,7 +126,7 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
       PrintHelper().completeProgress();
 
       PrintHelper().print(
-          'Fetched Strings: $lengthOfFoundStrings Files: ${textMapBuilder.pathToStringData.keys.length}',
+          'Fetched Strings: $lengthOfFoundStrings Files: ${foundedStringsAnalyzer.pathToStringData.keys.length}',
           style: styleBold,
           color: cyan,
           addToMessages: true);
@@ -126,45 +135,47 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
         PrintHelper().print(e.toString());
         PrintHelper().print(s.toString());
       }
-      throw (StackException(message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
+      throw (StackException(
+          message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
     }
   }
 
-  _generateJsonFile([bool notFirstRun=false]) {
+  _generateJsonFile([bool notFirstRun = false]) {
     try {
       String jsonPath = PrintHelper().prompt(
         'Where do you want to save your JSON file?',
         p.join(basePath, 'RESOURCES.json'),
       );
-      jsonPath = _pointersToPathWithMimeType(jsonPath,mimeType: 'json');
+      jsonPath = _pointersToPathWithMimeType(jsonPath, mimeType: 'json');
       PrintHelper().addProgress('Generating JSON File');
 
-      JsonMap.generateJsonFileFromMap(jsonPath, textMapBuilder.jsonMap);
-      if(notFirstRun == false)PrintHelper().completeProgress();
+      JsonMap.generateJsonFileFromMap(jsonPath, foundedStringsAnalyzer.jsonMap);
+      if (notFirstRun == false) PrintHelper().completeProgress();
     } on FileSystemException catch (e, s) {
       if (verbose) {
         PrintHelper().print(e.toString());
         PrintHelper().print(s.toString());
       }
-     return _generateJsonFile(true);
-    }
-    catch (e, s) {
+      return _generateJsonFile(true);
+    } catch (e, s) {
       if (verbose) {
         PrintHelper().print(e.toString());
         PrintHelper().print(s.toString());
       }
-      throw (StackException(message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
+      throw (StackException(
+          message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
     }
   }
 
-  _generateEnumAndExtension([bool notFirstRun=false]) {
+  _generateEnumAndExtension([bool notFirstRun = false]) {
     String filePath = PrintHelper().prompt(
       'Where do you want to save your Generated Enums?',
       '$basePath/lib/generated/keys.dart',
     );
-    filePath = _pointersToPathWithMimeType(filePath,mimeType: 'dart');
-    if(!notFirstRun) PrintHelper().addProgress('Generating ENUM KEYS File');
-    generateEnumFromKeys = GenerateEnumFromKeys( keys: textMapBuilder.keys);
+    filePath = _pointersToPathWithMimeType(filePath, mimeType: 'dart');
+    if (!notFirstRun) PrintHelper().addProgress('Generating ENUM KEYS File');
+    generateEnumFromKeys =
+        GenerateEnumFromKeys(keys: foundedStringsAnalyzer.keys);
     String generatedEnumAndExtension = generateEnumFromKeys.generateEnum();
     try {
       FileManager.writeFile(filePath, generatedEnumAndExtension);
@@ -173,7 +184,7 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
         PrintHelper().print(e.toString());
         PrintHelper().print(s.toString());
       }
-     return _generateEnumAndExtension(true);
+      return _generateEnumAndExtension(true);
     }
     PrintHelper().completeProgress();
   }
