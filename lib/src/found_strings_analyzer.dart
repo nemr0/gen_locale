@@ -13,9 +13,9 @@ class FoundedStringsAnalyzer {
 
   final PathToStringData _pathToString = {};
 
+  // Injecting StringProcessor via constructor
   final StringProcessor _stringProcessor;
 
-  // Injecting StringProcessor via constructor
   FoundedStringsAnalyzer({required StringProcessor stringProcessor})
       : _stringProcessor = stringProcessor;
 
