@@ -1,5 +1,6 @@
 import 'package:args/args.dart';
 import 'package:gen_locale/gen_locale.dart';
+import 'package:gen_locale/gen_locale_facade.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
 import 'package:gen_locale/src/models/gen_locale_abstract.dart';
 
@@ -53,7 +54,7 @@ Future<void> main(List<String> arguments) async {
       print('[VERBOSE] All arguments: ${results.arguments}');
     }
 
-    final GenLocale genLocale = GenLocaleImpl();
+    final GenLocale genLocale = GenLocaleFacade();
     // genLocale.init();
     await genLocale.run();
   } catch (e, s) {
