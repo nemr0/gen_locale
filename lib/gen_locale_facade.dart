@@ -1,41 +1,50 @@
-import 'dart:io';
 import 'dart:isolate';
 
-import 'package:gen_locale/src/file_manager.dart';
-import 'package:gen_locale/src/generate_enum_from_keys.dart';
-import 'package:gen_locale/src/generate_json_map.dart';
-import 'package:gen_locale/src/logger/exceptions.dart';
-import 'package:gen_locale/src/models/exclude_path_checker_impl/exclude_path_that_contains.dart';
-import 'package:gen_locale/src/models/exclude_path_checker_impl/include_only_dart_files.dart';
-import 'package:gen_locale/src/models/gen_locale_abstract.dart';
-import 'package:gen_locale/src/models/string_data.dart';
-import 'package:gen_locale/src/models/found_strings_analyzer_abs.dart';
-import 'package:gen_locale/src/models/exceptions/stack_exception.dart';
+import 'package:analyzer/file_system/file_system.dart';
 import 'package:gen_locale/src/found_strings_analyzer.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
-import 'package:gen_locale/src/string_processor.dart';
+import 'package:gen_locale/src/models/exceptions/generation_exception.dart';
+import 'package:gen_locale/src/models/exceptions/intialization_exception.dart';
+
+import 'package:gen_locale/src/models/found_strings_analyzer_abs.dart';
+import 'package:gen_locale/src/models/gen_locale_abstract.dart';
+import 'package:gen_locale/src/models/string_data.dart';
 import 'package:mason_logger/mason_logger.dart';
+
 import 'package:string_literal_finder/string_literal_finder.dart' as slf;
 import 'package:path/path.dart' as p;
-import 'package:yaml/yaml.dart';
 
-class GenLocaleImpl extends GenLocale {
-  final bool verbose = PrintHelper().verbose;
+import 'src/file_manager.dart';
+import 'src/generate_enum_from_keys.dart';
+import 'src/generate_json_map.dart';
+import 'src/logger/exceptions.dart';
+import 'src/models/exceptions/stack_exception.dart';
+import 'src/models/exclude_path_checker_impl/exclude_path_that_contains.dart';
+import 'src/models/exclude_path_checker_impl/include_only_dart_files.dart';
+import 'src/string_processor.dart';
 
-  /// A Map of File Path as a key with value of List of [StringData]
-  /// Used For Replacing texts file by file.
+class GenLocaleFacade extends GenLocale {
+  // declare all classes responsible for different main proccessing
+  late final PrintHelper _printHelper;
+  late final FoundedStringsAnalayzer _foundedStringsAnalyzer;
 
-  SetOfStringData get setOfStringData => foundedStringsAnalyzer.setOfStringData;
-  int lengthOfFoundStrings = 0;
-  late GenerateEnumFromKeys generateEnumFromKeys;
+  late final String _basePath;
+  late final List<slf.ExcludePathChecker> _excludesList;
+  late final slf.StringLiteralFinder _finder;
+  late final bool _verbose;
 
-  initFinder() => finder =
-      slf.StringLiteralFinder(basePath: basePath, excludePaths: excludes);
+  GenLocaleFacade() {
+    // intialize all classes
+    _printHelper = _printHelper;
+    _foundedStringsAnalyzer = FoundedStringsAnalyzerImpl();
+    _verbose = _printHelper.verbose;
+  }
 
-  late final slf.StringLiteralFinder finder;
+  void _initFinder() => _finder =
+      slf.StringLiteralFinder(basePath: _basePath, excludePaths: _excludesList);
 
-  initExcludes(List<String> excludeStrings) {
-    excludes = [
+  void _initExcludes(List<String> excludeStrings) {
+    _excludesList = [
       slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),
       IncludeOnlyDartFiles(),
       ...slf.ExcludePathChecker.excludePathDefaults,
@@ -44,145 +53,112 @@ class GenLocaleImpl extends GenLocale {
     ];
   }
 
-  GenLocaleImpl() {
-    PrintHelper().version();
-
-    // _getReplaceCodeBase();
+  void _intialize() {
+    try {
+      // get base path
+      _basePath = _printHelper.getBaseUri();
+      // get excludes files prompted from user
+      _initExcludes(_printHelper.getUserExcludes());
+      //add progress
+      _printHelper.addProgress('Analyzing Project');
+      // intialize finder after getting base path and list of excludes files
+      _initFinder();
+    } catch (e, s) {
+      throw (IntializationException(
+          message: Exceptions.couldNotIntializeFinder, stack: '$e\n$s'));
+    }
   }
-
-  late final bool replaceCodeBase;
-
-  // _getReplaceCodeBase() {
-  //   replaceCodeBase =
-  //       PrintHelper().chooseOne<bool>('Do you want to replace all strings in your code base?', [true, false], false);
-  // }
-
-  String _getBaseUri() {
-    String base = PrintHelper().prompt(
-        'Enter Project Path... (default to current)', Directory.current.path,
-        skipFlush: true);
-
-    base = StringProcessor.pointersToPathWithMimeType(
-      base,
-    );
-    if (!FileManager.directoryExists(base)) {
-      PrintHelper().print('Couldn\'t find Directory', color: red);
-      return _getBaseUri();
-    }
-    String pubspecPath = p.join(base, 'pubspec.yaml');
-    if (!FileManager.fileExists(pubspecPath)) {
-      PrintHelper()
-          .print('Not a Flutter project: pubspec.yaml not found..', color: red);
-      return _getBaseUri();
-    }
-    final pubspec = loadYaml(File(pubspecPath).readAsStringSync());
-    final dependencies = pubspec['dependencies'] as Map?;
-    PrintHelper().packageName = pubspec['name'];
-    if (dependencies == null || !dependencies.containsKey('flutter')) {
-      PrintHelper().print(
-          'Not a Flutter project: flutter dependency not found.',
-          color: red);
-      return _getBaseUri();
-    }
-    PrintHelper().print('Chosen Path: $base',
-        color: cyan, style: styleBold, flushAndRewrite: true);
-    return base;
-  }
-
-  List<String> _getUserExcludes() => PrintHelper().promptAny(
-      'excludes: to exclude files with specific path. for example: "presentation,business" excludes all paths that contain presentation or business');
 
   Future<void> _analyzeProject() async {
     try {
-      basePath = _getBaseUri();
-      initExcludes(_getUserExcludes());
-      PrintHelper().addProgress('Analyzing Project');
-      initFinder();
-      foundedStringsAnalyzer = FoundedStringsAnalyzerImpl();
       List<Map<String, dynamic>> data = await Isolate.run(() async {
-        List<slf.FoundStringLiteral> a = await finder.start();
+        List<slf.FoundStringLiteral> a = await _finder.start();
         for (var found in a) {
-          foundedStringsAnalyzer.addAFoundStringLiteral(found);
+          _foundedStringsAnalyzer.addAFoundStringLiteral(found);
         }
-        return setOfStringData.map((e) => e.toMap()).toList();
+        return _foundedStringsAnalyzer.setOfStringData
+            .map((e) => e.toMap())
+            .toList();
       });
       Set<StringData> dataSet = data.map((e) => StringData.fromJson(e)).toSet();
-      foundedStringsAnalyzer.addAllStringData(dataSet);
-      lengthOfFoundStrings = dataSet.length;
-      if (verbose) {
-        PrintHelper().print(setOfStringData.toString());
+      _foundedStringsAnalyzer.addAllStringData(dataSet);
+
+      if (_verbose) {
+        _printHelper.print(_foundedStringsAnalyzer.setOfStringData.toString());
         print('--------------------------------------------');
       }
-      PrintHelper().completeProgress();
+      _printHelper.completeProgress();
 
-      PrintHelper().print(
-          'Fetched Strings: $lengthOfFoundStrings Files: ${foundedStringsAnalyzer.pathToStringData.keys.length}',
+      _printHelper.print(
+          'Fetched Strings: ${dataSet.length} Files: ${_foundedStringsAnalyzer.pathToStringData.keys.length}',
           style: styleBold,
           color: cyan,
           addToMessages: true);
     } catch (e, s) {
-      if (verbose) {
-        PrintHelper().print(e.toString());
-        PrintHelper().print(s.toString());
+      if (_verbose) {
+        _printHelper.print(e.toString());
+        _printHelper.print(s.toString());
       }
       throw (StackException(
           message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
     }
   }
 
-  _generateJsonFile([bool notFirstRun = false]) {
+  void _generateJsonFile([bool notFirstRun = false]) {
     try {
-      String jsonPath = PrintHelper().prompt(
+      String jsonPath = _printHelper.prompt(
         'Where do you want to save your JSON file?',
-        p.join(basePath, 'RESOURCES.json'),
+        p.join(_basePath, 'RESOURCES.json'),
       );
       jsonPath = StringProcessor.pointersToPathWithMimeType(jsonPath,
           mimeType: 'json');
-      PrintHelper().addProgress('Generating JSON File');
+      _printHelper.addProgress('Generating JSON File');
 
-      JsonMap.generateJsonFileFromMap(jsonPath, foundedStringsAnalyzer.jsonMap);
-      if (notFirstRun == false) PrintHelper().completeProgress();
+      JsonMap.generateJsonFileFromMap(
+          jsonPath, _foundedStringsAnalyzer.jsonMap);
+      if (notFirstRun == false) _printHelper.completeProgress();
     } on FileSystemException catch (e, s) {
-      if (verbose) {
-        PrintHelper().print(e.toString());
-        PrintHelper().print(s.toString());
+      if (_verbose) {
+        _printHelper.print(e.toString());
+        _printHelper.print(s.toString());
       }
       return _generateJsonFile(true);
     } catch (e, s) {
-      if (verbose) {
-        PrintHelper().print(e.toString());
-        PrintHelper().print(s.toString());
+      if (_verbose) {
+        _printHelper.print(e.toString());
+        _printHelper.print(s.toString());
       }
-      throw (StackException(
-          message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
+      throw (GenerationException(
+          message: Exceptions.couldNotGenerateJsonFile, stack: '$e\n$s'));
     }
   }
 
-  _generateEnumAndExtension([bool notFirstRun = false]) {
-    String filePath = PrintHelper().prompt(
+  void _generateEnumAndExtension([bool notFirstRun = false]) {
+    String filePath = _printHelper.prompt(
       'Where do you want to save your Generated Enums?',
       '$basePath/lib/generated/keys.dart',
     );
     filePath =
         StringProcessor.pointersToPathWithMimeType(filePath, mimeType: 'dart');
-    if (!notFirstRun) PrintHelper().addProgress('Generating ENUM KEYS File');
-    generateEnumFromKeys =
-        GenerateEnumFromKeys(keys: foundedStringsAnalyzer.keys);
+    if (!notFirstRun) _printHelper.addProgress('Generating ENUM KEYS File');
+    final generateEnumFromKeys =
+        GenerateEnumFromKeys(keys: _foundedStringsAnalyzer.keys);
     String generatedEnumAndExtension = generateEnumFromKeys.generateEnum();
     try {
       FileManager.writeFile(filePath, generatedEnumAndExtension);
     } catch (e, s) {
-      if (verbose) {
-        PrintHelper().print(e.toString());
-        PrintHelper().print(s.toString());
+      if (_verbose) {
+        _printHelper.print(e.toString());
+        _printHelper.print(s.toString());
       }
       return _generateEnumAndExtension(true);
     }
-    PrintHelper().completeProgress();
+    _printHelper.completeProgress();
   }
 
   @override
   Future<void> run() async {
+    _intialize();
     await _analyzeProject();
     _generateJsonFile();
     _generateEnumAndExtension();
