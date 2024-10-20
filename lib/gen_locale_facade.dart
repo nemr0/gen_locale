@@ -35,7 +35,7 @@ class GenLocaleFacade extends GenLocale {
 
   GenLocaleFacade() {
     // intialize all classes
-    _printHelper = _printHelper;
+    _printHelper = PrintHelper();
     _foundedStringsAnalyzer = FoundedStringsAnalyzerImpl();
     _verbose = _printHelper.verbose;
   }
