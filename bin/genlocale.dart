@@ -1,7 +1,7 @@
-
 import 'package:args/args.dart';
-import 'package:gen_locale/gen_locale.dart';
+import 'package:gen_locale/gen_locale_facade.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
+import 'package:gen_locale/src/models/gen_locale_abstract.dart';
 
 ArgParser buildParser() {
   return ArgParser()
@@ -34,7 +34,6 @@ Future<void> main(List<String> arguments) async {
   try {
     final ArgResults results = argParser.parse(arguments);
 
-
     // Process the parsed arguments.
     if (results.wasParsed('help')) {
       printUsage(argParser);
@@ -48,17 +47,16 @@ Future<void> main(List<String> arguments) async {
       PrintHelper().verbose = true;
     }
 
-
     // Act on the arguments provided.
     // print('Positional arguments: ${results.rest}');
     if (PrintHelper().verbose) {
       print('[VERBOSE] All arguments: ${results.arguments}');
     }
 
-    final genLocale=GenLocaleStringLiteralFinder();
-     // genLocale.init();
+    final GenLocale genLocale = GenLocaleImpl();
+    // genLocale.init();
     await genLocale.run();
-  } catch(e,s) {
+  } catch (e, s) {
     PrintHelper().progressFailed('$e\n$s');
     // Print usage information if an invalid argument was provided.
     printUsage(argParser);

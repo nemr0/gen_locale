@@ -1,5 +1,7 @@
+import 'dart:io';
+
 class StringProcessor {
-  String valueFromSource(String source) {
+  static String valueFromSource(String source) {
     // if starts as a raw string
     if (source.startsWith("r'") || source.startsWith('r"')) {
       return source
@@ -11,7 +13,7 @@ class StringProcessor {
     return source.replaceAll('\'', '').replaceAll('"', '');
   }
 
-  (String replacedSource, List<String>? variables) matchVariables(
+  static (String replacedSource, List<String>? variables) matchVariables(
       String source) {
     // skips no vars strings and raw strings
     if (source.contains('\$') == false ||
@@ -34,5 +36,17 @@ class StringProcessor {
       source = source.replaceFirst(matchString, "{}");
     }
     return (source, variables.isEmpty ? null : variables);
+  }
+
+  static String pointersToPathWithMimeType(String path, {String? mimeType}) {
+    if (path.startsWith('./') || path == '.') {
+      path = path.replaceFirst('.', Directory.current.path);
+    } else if (path.startsWith('../') || path == '..') {
+      path = path.replaceFirst('..', Directory.current.parent.path);
+    }
+    if (mimeType != null && path.split('/').last.split('.').last != mimeType) {
+      path = '$path.$mimeType';
+    }
+    return path;
   }
 }
