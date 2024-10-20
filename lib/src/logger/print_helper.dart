@@ -1,6 +1,10 @@
 import 'package:mason_logger/mason_logger.dart';
+import 'package:yaml/yaml.dart';
 import 'dart:io' as io;
+import '../file_manager.dart';
+import '../string_processor.dart';
 import 'ansi_logo.dart';
+import 'package:path/path.dart' as p;
 
 class PrintHelper {
   /// Prints logo + App Name + Version + Generating Localization Message
@@ -29,11 +33,12 @@ class PrintHelper {
   void print(String text,
       {AnsiCode color = lightGray,
       AnsiCode style = lightGray,
-      bool addToMessages = false,bool flushAndRewrite = false}) {
+      bool addToMessages = false,
+      bool flushAndRewrite = false}) {
     final message = style.wrap(color.wrap(text));
     _logger.info(message);
-    if(flushAndRewrite){
-      _flushAndRewrite(message!,'');
+    if (flushAndRewrite) {
+      _flushAndRewrite(message!, '');
     }
     if (addToMessages && !flushAndRewrite) _addToPrintMessages(message!);
   }
@@ -63,17 +68,18 @@ class PrintHelper {
     if (!_hasTerminal) {
       return defaultValue;
     }
-    T result = _logger.chooseOne(message, choices: choices, defaultValue: defaultValue);
+    T result = _logger.chooseOne(message,
+        choices: choices, defaultValue: defaultValue);
     _flushAndRewrite(message, result.toString());
-   return result;
+    return result;
   }
 
-  String prompt(String message, String defaultValue,{bool skipFlush = false}) {
+  String prompt(String message, String defaultValue, {bool skipFlush = false}) {
     if (!_hasTerminal) {
       return defaultValue;
     }
     String result = _logger.prompt(message, defaultValue: defaultValue);
-   if(!skipFlush) _flushAndRewrite(message, result);
+    if (!skipFlush) _flushAndRewrite(message, result);
     return result;
   }
 
@@ -133,4 +139,40 @@ class PrintHelper {
         displayInMilliseconds ? '${time}ms' : '${time.toStringAsFixed(1)}s';
     return '${darkGray.wrap('($formattedTime)')}';
   }
+
+  String getBaseUri() {
+    String base = prompt(
+        'Enter Project Path... (default to current)', io.Directory.current.path,
+        skipFlush: true);
+
+    base = StringProcessor.pointersToPathWithMimeType(
+      base,
+    );
+    if (!FileManager.directoryExists(base)) {
+      PrintHelper().print('Couldn\'t find Directory', color: red);
+      return getBaseUri();
+    }
+    String pubspecPath = p.join(base, 'pubspec.yaml');
+    if (!FileManager.fileExists(pubspecPath)) {
+      PrintHelper()
+          .print('Not a Flutter project: pubspec.yaml not found..', color: red);
+      return getBaseUri();
+    }
+    final pubspec = loadYaml(io.File(pubspecPath).readAsStringSync());
+    final dependencies = pubspec['dependencies'] as Map?;
+    PrintHelper().packageName = pubspec['name'];
+    if (dependencies == null || !dependencies.containsKey('flutter')) {
+      PrintHelper().print(
+          'Not a Flutter project: flutter dependency not found.',
+          color: red);
+      return getBaseUri();
+    }
+    PrintHelper().print('Chosen Path: $base',
+        color: cyan, style: styleBold, flushAndRewrite: true);
+    return base;
+  }
+
+  // should be moved to print helper as seperation of concern
+  List<String> getUserExcludes() => PrintHelper().promptAny(
+      'excludes: to exclude files with specific path. for example: "presentation,business" excludes all paths that contain presentation or business');
 }

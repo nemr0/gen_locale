@@ -10,7 +10,7 @@ import 'package:gen_locale/src/models/exclude_path_checker_impl/include_only_dar
 import 'package:gen_locale/src/models/gen_locale_abstract.dart';
 import 'package:gen_locale/src/models/string_data.dart';
 import 'package:gen_locale/src/models/found_strings_analyzer_abs.dart';
-import 'package:gen_locale/src/stack_exception.dart';
+import 'package:gen_locale/src/models/exceptions/stack_exception.dart';
 import 'package:gen_locale/src/found_strings_analyzer.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
 import 'package:gen_locale/src/string_processor.dart';
