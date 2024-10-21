@@ -3,6 +3,7 @@ import 'package:gen_locale/src/models/string_data.dart';
 import 'package:gen_locale/src/models/found_strings_analyzer_abs.dart';
 import 'package:gen_locale/src/string_processor.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
+import 'package:path/path.dart' as p;
 
 class FoundedStringsAnalyzerImpl implements FoundedStringsAnalayzer {
   @override
@@ -28,19 +29,29 @@ class FoundedStringsAnalyzerImpl implements FoundedStringsAnalayzer {
   }
 
   String _getKeyFor(String filePath, String source) {
-    // {file_name}_{index}
-    String key =
-        '${filePath.split('/').last.split('.').first}_${_pathToString[filePath]?.length ?? 0}';
-    // if key exists this wont be empty:
+    // Extract the file name without the extension
+    String fileName = p.basenameWithoutExtension(filePath);
+
+    // Get the current count of found strings for this file path
+    int currentIndex = _pathToString[filePath]?.length ?? 0;
+
+    // Create the initial key format
+    String key = '${fileName}_$currentIndex';
+
+    // Check if the key already exists
     final keyExistsList =
         _setOfStringData.where((element) => element.key == key);
+
+    // If the key exists and the source matches, return the key
     if (keyExistsList.isNotEmpty) {
       if (keyExistsList.first.source == source) {
         return key;
       }
-      // recursive to paths
-      key = _getKeyFor(key, source);
+
+      // If the source does not match, recursively get a new key
+      return _getKeyFor(filePath, source);
     }
+
     return key;
   }
 

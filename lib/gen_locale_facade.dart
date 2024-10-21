@@ -29,8 +29,9 @@ class GenLocaleFacade extends GenLocale {
   late final FoundedStringsAnalayzer _foundedStringsAnalyzer;
 
   late final String _basePath;
+  late final String _rawBasePath;
   late final List<slf.ExcludePathChecker> _excludesList;
-  late final slf.StringLiteralFinder _finder;
+  late final slf.StringLiteralFinder finder;
   late final bool _verbose;
 
   GenLocaleFacade() {
@@ -40,7 +41,7 @@ class GenLocaleFacade extends GenLocale {
     _verbose = _printHelper.verbose;
   }
 
-  void _initFinder() => _finder =
+  void _initFinder() => finder =
       slf.StringLiteralFinder(basePath: _basePath, excludePaths: _excludesList);
 
   void _initExcludes(List<String> excludeStrings) {
@@ -56,7 +57,10 @@ class GenLocaleFacade extends GenLocale {
   void _intialize() {
     try {
       // get base path
-      _basePath = _printHelper.getBaseUri();
+      _rawBasePath = _printHelper.getBaseUri();
+
+      _basePath = p.normalize(p.absolute(_rawBasePath));
+
       // get excludes files prompted from user
       _initExcludes(_printHelper.getUserExcludes());
       //add progress
@@ -71,16 +75,41 @@ class GenLocaleFacade extends GenLocale {
 
   Future<void> _analyzeProject() async {
     try {
+      // Capture any necessary data outside of the isolate to avoid capturing the outer context
+      final String basePath = _basePath;
+      final List<String> excludeStrings =
+          _excludesList.map((e) => e.toString()).toList();
+
+      // Use the Isolate to run the task without capturing any external state directly.
       List<Map<String, dynamic>> data = await Isolate.run(() async {
-        List<slf.FoundStringLiteral> a = await _finder.start();
-        for (var found in a) {
-          _foundedStringsAnalyzer.addAFoundStringLiteral(found);
+        // Initialize necessary objects inside the isolate
+        final FoundedStringsAnalyzerImpl localAnalyzer =
+            FoundedStringsAnalyzerImpl();
+
+        // Create a new StringLiteralFinder instance within the isolate
+        final slf.StringLiteralFinder localFinder = slf.StringLiteralFinder(
+          basePath: basePath,
+          excludePaths: [
+            slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),
+            IncludeOnlyDartFiles(),
+            ...slf.ExcludePathChecker.excludePathDefaults,
+            ...excludeStrings.map((e) => ExcludePathThatContains(contains: e)),
+          ],
+        );
+
+        // Perform the string literal finding
+        List<slf.FoundStringLiteral> foundStrings = await localFinder.start();
+        for (var found in foundStrings) {
+          localAnalyzer.addAFoundStringLiteral(found);
         }
-        return _foundedStringsAnalyzer.setOfStringData
-            .map((e) => e.toMap())
-            .toList();
+
+        // Return serializable data from the isolate
+        return localAnalyzer.setOfStringData.map((e) => e.toMap()).toList();
       });
+
+      // Convert the returned data to the desired type and add it to the main analyzer
       Set<StringData> dataSet = data.map((e) => StringData.fromJson(e)).toSet();
+
       _foundedStringsAnalyzer.addAllStringData(dataSet);
 
       if (_verbose) {
@@ -108,7 +137,7 @@ class GenLocaleFacade extends GenLocale {
     try {
       String jsonPath = _printHelper.prompt(
         'Where do you want to save your JSON file?',
-        p.join(_basePath, 'RESOURCES.json'),
+        p.join(_rawBasePath, 'RESOURCES.json'),
       );
       jsonPath = StringProcessor.pointersToPathWithMimeType(jsonPath,
           mimeType: 'json');
@@ -136,7 +165,7 @@ class GenLocaleFacade extends GenLocale {
   void _generateEnumAndExtension([bool notFirstRun = false]) {
     String filePath = _printHelper.prompt(
       'Where do you want to save your Generated Enums?',
-      '$basePath/lib/generated/keys.dart',
+      '$_basePath/lib/generated/keys.dart',
     );
     filePath =
         StringProcessor.pointersToPathWithMimeType(filePath, mimeType: 'dart');
@@ -161,6 +190,6 @@ class GenLocaleFacade extends GenLocale {
     _intialize();
     await _analyzeProject();
     _generateJsonFile();
-    _generateEnumAndExtension();
+    // _generateEnumAndExtension();
   }
 }
