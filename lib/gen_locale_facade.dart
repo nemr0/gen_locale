@@ -165,7 +165,7 @@ class GenLocaleFacade extends GenLocale {
   void _generateEnumAndExtension([bool notFirstRun = false]) {
     String filePath = _printHelper.prompt(
       'Where do you want to save your Generated Enums?',
-      '$_basePath/lib/generated/keys.dart',
+      '$_rawBasePath/lib/generated/keys.dart',
     );
     filePath =
         StringProcessor.pointersToPathWithMimeType(filePath, mimeType: 'dart');
@@ -190,6 +190,6 @@ class GenLocaleFacade extends GenLocale {
     _intialize();
     await _analyzeProject();
     _generateJsonFile();
-    // _generateEnumAndExtension();
+    _generateEnumAndExtension();
   }
 }

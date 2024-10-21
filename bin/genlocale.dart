@@ -1,5 +1,5 @@
 import 'package:args/args.dart';
-import 'package:gen_locale/gen_locale.dart';
+
 import 'package:gen_locale/gen_locale_facade.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
 import 'package:gen_locale/src/models/gen_locale_abstract.dart';
