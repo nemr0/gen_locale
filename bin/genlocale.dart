@@ -2,6 +2,8 @@
 import 'package:args/args.dart';
 import 'package:gen_locale/gen_locale.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
+import 'package:gen_locale/src/string_processor.dart';
+import 'package:gen_locale/src/strings_getter.dart';
 
 ArgParser buildParser() {
   return ArgParser()
@@ -55,7 +57,7 @@ Future<void> main(List<String> arguments) async {
       print('[VERBOSE] All arguments: ${results.arguments}');
     }
 
-    final genLocale=GenLocaleStringLiteralFinder();
+    final genLocale=GenLocaleStringLiteralFinder(stringProcessor:StringProcessor(), stringsGetter: StringsGetter());
      // genLocale.init();
     await genLocale.run();
   } catch(e,s) {

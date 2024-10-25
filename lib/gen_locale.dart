@@ -1,21 +1,16 @@
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:gen_locale/src/file_manager.dart';
 import 'package:gen_locale/src/generate_enum_from_keys.dart';
 import 'package:gen_locale/src/generate_json_map.dart';
 import 'package:gen_locale/src/logger/exceptions.dart';
-import 'package:gen_locale/src/models/exclude_path_checker_impl/exclude_path_that_contains.dart';
-import 'package:gen_locale/src/models/exclude_path_checker_impl/include_only_dart_files.dart';
 import 'package:gen_locale/src/models/gen_locale_abstract.dart';
 import 'package:gen_locale/src/models/string_data.dart';
 import 'package:gen_locale/src/models/text_map_builder.dart';
 import 'package:gen_locale/src/stack_exception.dart';
 import 'package:gen_locale/src/found_strings_analyzer.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
-import 'package:gen_locale/src/string_processor.dart';
 import 'package:mason_logger/mason_logger.dart';
-import 'package:string_literal_finder/string_literal_finder.dart' as slf;
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -24,44 +19,17 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
 
   /// A Map of File Path as a key with value of List of [StringData]
   /// Used For Replacing texts file by file.
-
   SetOfStringData get setOfStringData => foundedStringsAnalyzer.setOfStringData;
   int lengthOfFoundStrings = 0;
   late GenerateEnumFromKeys generateEnumFromKeys;
 
-  initFinder() => finder =
-      slf.StringLiteralFinder(basePath: basePath, excludePaths: excludes);
 
-  late final slf.StringLiteralFinder finder;
 
-  initExcludes(List<String> excludeStrings) {
-    excludes = [
-      slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),
-      IncludeOnlyDartFiles(),
-      ...slf.ExcludePathChecker.excludePathDefaults,
-      ...excludeStrings.map<ExcludePathThatContains>(
-          (e) => ExcludePathThatContains(contains: e)),
-    ];
-  }
 
-  GenLocaleStringLiteralFinder() {
-    PrintHelper().version();
+  GenLocaleStringLiteralFinder({required super.stringProcessor, required super.stringsGetter});
 
-    // _getReplaceCodeBase();
-  }
-  String _pointersToPathWithMimeType(String path, {String? mimeType}) {
-    if (path.startsWith('./') || path == '.') {
-      path = path.replaceFirst('.', Directory.current.path);
-    } else if (path.startsWith('../') || path == '..') {
-      path = path.replaceFirst('..', Directory.current.parent.path);
-    }
-    if (mimeType != null && path.split('/').last.split('.').last != mimeType) {
-      path = '$path.$mimeType';
-    }
-    return path;
-  }
-
-  late final bool replaceCodeBase;
+  // TODO: Needs to be added back with Replacing logic.
+  // late final bool replaceCodeBase;
 
   // _getReplaceCodeBase() {
   //   replaceCodeBase =
@@ -73,7 +41,7 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
         'Enter Project Path... (default to current)', Directory.current.path,
         skipFlush: true);
 
-    base = _pointersToPathWithMimeType(
+    base = stringProcessor.pointersToPathWithMimeType(
       base,
     );
     if (!FileManager.directoryExists(base)) {
@@ -100,31 +68,15 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
     return base;
   }
 
-  List<String> _getUserExcludes() => PrintHelper().promptAny(
-      'excludes: to exclude files with specific path. for example: "presentation,business" excludes all paths that contain presentation or business');
 
   Future<void> _analyzeProject() async {
     try {
       basePath = _getBaseUri();
-      initExcludes(_getUserExcludes());
       PrintHelper().addProgress('Analyzing Project');
-      initFinder();
-      foundedStringsAnalyzer =
-          FoundedStringsAnalyzer(stringProcessor: StringProcessor());
-      List<Map<String, dynamic>> data = await Isolate.run(() async {
-        List<slf.FoundStringLiteral> a = await finder.start();
-        for (var found in a) {
-          foundedStringsAnalyzer.addAFoundStringLiteral(found);
-        }
-        return setOfStringData.map((e) => e.toMap()).toList();
-      });
-      Set<StringData> dataSet = data.map((e) => StringData.fromJson(e)).toSet();
-      foundedStringsAnalyzer.addAllStringData(dataSet);
-      lengthOfFoundStrings = dataSet.length;
-      if (verbose) {
-        PrintHelper().print(setOfStringData.toString());
-        print('--------------------------------------------');
-      }
+      foundedStringsAnalyzer = FoundedStringsAnalyzer(stringProcessor: stringProcessor);
+      await stringsGetter.run(basePath,foundedStringsAnalyzer);
+      lengthOfFoundStrings = foundedStringsAnalyzer.setOfStringData.length;
+
       PrintHelper().completeProgress();
 
       PrintHelper().print(
@@ -133,22 +85,17 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
           color: cyan,
           addToMessages: true);
     } catch (e, s) {
-      if (verbose) {
-        PrintHelper().print(e.toString());
-        PrintHelper().print(s.toString());
-      }
-      throw (StackException(
-          message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
+      throw (StackException(message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
     }
   }
 
-  _generateJsonFile([bool notFirstRun = false]) {
+  void _generateJsonFile([bool notFirstRun = false]) {
     try {
       String jsonPath = PrintHelper().prompt(
         'Where do you want to save your JSON file?',
         p.join(basePath, 'RESOURCES.json'),
       );
-      jsonPath = _pointersToPathWithMimeType(jsonPath, mimeType: 'json');
+      jsonPath = stringProcessor.pointersToPathWithMimeType(jsonPath, mimeType: 'json');
       PrintHelper().addProgress('Generating JSON File');
 
       JsonMap.generateJsonFileFromMap(jsonPath, foundedStringsAnalyzer.jsonMap);
@@ -160,21 +107,18 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
       }
       return _generateJsonFile(true);
     } catch (e, s) {
-      if (verbose) {
-        PrintHelper().print(e.toString());
-        PrintHelper().print(s.toString());
-      }
+
       throw (StackException(
           message: Exceptions.couldNotStartDartServer, stack: '$e\n$s'));
     }
   }
 
-  _generateEnumAndExtension([bool notFirstRun = false]) {
+  void _generateEnumAndExtension([bool notFirstRun = false]) {
     String filePath = PrintHelper().prompt(
       'Where do you want to save your Generated Enums?',
       '$basePath/lib/generated/keys.dart',
     );
-    filePath = _pointersToPathWithMimeType(filePath, mimeType: 'dart');
+    filePath = stringProcessor.pointersToPathWithMimeType(filePath, mimeType: 'dart');
     if (!notFirstRun) PrintHelper().addProgress('Generating ENUM KEYS File');
     generateEnumFromKeys =
         GenerateEnumFromKeys(keys: foundedStringsAnalyzer.keys);
@@ -193,6 +137,7 @@ class GenLocaleStringLiteralFinder extends GenLocaleAbs {
 
   @override
   Future<void> run() async {
+    PrintHelper().version();
     await _analyzeProject();
     _generateJsonFile();
     _generateEnumAndExtension();

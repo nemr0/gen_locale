@@ -1,4 +1,8 @@
+import 'dart:io';
+
 class StringProcessor {
+  /// Given a Source of String (A Quoted String From Dart File)
+  /// Removes all Quotations.
   String valueFromSource(String source) {
     // if starts as a raw string
     if (source.startsWith("r'") || source.startsWith('r"')) {
@@ -10,7 +14,8 @@ class StringProcessor {
     }
     return source.replaceAll('\'', '').replaceAll('"', '');
   }
-
+  /// Given Source of String (A Quoted String From Dart File)
+  /// Returns All Variables with the String and The source String with variable replaced.
   (String replacedSource, List<String>? variables) matchVariables(
       String source) {
     // skips no vars strings and raw strings
@@ -34,5 +39,16 @@ class StringProcessor {
       source = source.replaceFirst(matchString, "{}");
     }
     return (source, variables.isEmpty ? null : variables);
+  }
+  String pointersToPathWithMimeType(String path, {String? mimeType}) {
+    if (path.startsWith('./') || path == '.') {
+      path = path.replaceFirst('.', Directory.current.path);
+    } else if (path.startsWith('../') || path == '..') {
+      path = path.replaceFirst('..', Directory.current.parent.path);
+    }
+    if (mimeType != null && path.split('/').last.split('.').last != mimeType) {
+      path = '$path.$mimeType';
+    }
+    return path;
   }
 }
