@@ -1,5 +1,3 @@
-import 'dart:isolate';
-
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:gen_locale/src/found_strings_analyzer.dart';
 import 'package:gen_locale/src/logger/print_helper.dart';
@@ -9,9 +7,9 @@ import 'package:gen_locale/src/models/exceptions/intialization_exception.dart';
 import 'package:gen_locale/src/models/found_strings_analyzer_abs.dart';
 import 'package:gen_locale/src/models/gen_locale_abstract.dart';
 import 'package:gen_locale/src/models/string_data.dart';
+import 'package:gen_locale/src/string_getter.dart';
 import 'package:mason_logger/mason_logger.dart';
 
-import 'package:string_literal_finder/string_literal_finder.dart' as slf;
 import 'package:path/path.dart' as p;
 
 import 'src/file_manager.dart';
@@ -19,39 +17,26 @@ import 'src/generate_enum_from_keys.dart';
 import 'src/generate_json_map.dart';
 import 'src/logger/exceptions.dart';
 import 'src/models/exceptions/stack_exception.dart';
-import 'src/models/exclude_path_checker_impl/exclude_path_that_contains.dart';
-import 'src/models/exclude_path_checker_impl/include_only_dart_files.dart';
+
 import 'src/string_processor.dart';
 
 class GenLocaleFacade extends GenLocale {
   // declare all classes responsible for different main proccessing
   late final PrintHelper _printHelper;
   late final FoundedStringsAnalayzer _foundedStringsAnalyzer;
+  late final StringsGetter _stringsGetter;
 
   late final String _basePath;
   late final String _rawBasePath;
-  late final List<slf.ExcludePathChecker> _excludesList;
-  late final slf.StringLiteralFinder finder;
+
   late final bool _verbose;
 
   GenLocaleFacade() {
     // intialize all classes
     _printHelper = PrintHelper();
     _foundedStringsAnalyzer = FoundedStringsAnalyzerImpl();
+    _stringsGetter = StringsGetter(_printHelper);
     _verbose = _printHelper.verbose;
-  }
-
-  void _initFinder() => finder =
-      slf.StringLiteralFinder(basePath: _basePath, excludePaths: _excludesList);
-
-  void _initExcludes(List<String> excludeStrings) {
-    _excludesList = [
-      slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),
-      IncludeOnlyDartFiles(),
-      ...slf.ExcludePathChecker.excludePathDefaults,
-      ...excludeStrings.map<ExcludePathThatContains>(
-          (e) => ExcludePathThatContains(contains: e)),
-    ];
   }
 
   void _intialize() {
@@ -61,12 +46,8 @@ class GenLocaleFacade extends GenLocale {
 
       _basePath = p.normalize(p.absolute(_rawBasePath));
 
-      // get excludes files prompted from user
-      _initExcludes(_printHelper.getUserExcludes());
       //add progress
       _printHelper.addProgress('Analyzing Project');
-      // intialize finder after getting base path and list of excludes files
-      _initFinder();
     } catch (e, s) {
       throw (IntializationException(
           message: Exceptions.couldNotIntializeFinder, stack: '$e\n$s'));
@@ -77,39 +58,14 @@ class GenLocaleFacade extends GenLocale {
     try {
       // Capture any necessary data outside of the isolate to avoid capturing the outer context
       final String basePath = _basePath;
-      final List<String> excludeStrings =
-          _excludesList.map((e) => e.toString()).toList();
 
-      // Use the Isolate to run the task without capturing any external state directly.
-      List<Map<String, dynamic>> data = await Isolate.run(() async {
-        // Initialize necessary objects inside the isolate
-        final FoundedStringsAnalyzerImpl localAnalyzer =
-            FoundedStringsAnalyzerImpl();
-
-        // Create a new StringLiteralFinder instance within the isolate
-        final slf.StringLiteralFinder localFinder = slf.StringLiteralFinder(
-          basePath: basePath,
-          excludePaths: [
-            slf.ExcludePathChecker.excludePathCheckerEndsWith('_test.dart'),
-            IncludeOnlyDartFiles(),
-            ...slf.ExcludePathChecker.excludePathDefaults,
-            ...excludeStrings.map((e) => ExcludePathThatContains(contains: e)),
-          ],
-        );
-
-        // Perform the string literal finding
-        List<slf.FoundStringLiteral> foundStrings = await localFinder.start();
-        for (var found in foundStrings) {
-          localAnalyzer.addAFoundStringLiteral(found);
-        }
-
-        // Return serializable data from the isolate
-        return localAnalyzer.setOfStringData.map((e) => e.toMap()).toList();
-      });
+      // Use the Isolate to run string analyzer conccurently
+      final analyzedStrings = await _stringsGetter.run(basePath);
 
       // Convert the returned data to the desired type and add it to the main analyzer
-      Set<StringData> dataSet = data.map((e) => StringData.fromJson(e)).toSet();
-
+      Set<StringData> dataSet =
+          analyzedStrings.map((e) => StringData.fromJson(e)).toSet();
+      // add data to the active founded analyzer that will be used accross all processes
       _foundedStringsAnalyzer.addAllStringData(dataSet);
 
       if (_verbose) {

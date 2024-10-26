@@ -154,25 +154,21 @@ class PrintHelper {
     }
     String pubspecPath = p.join(base, 'pubspec.yaml');
     if (!FileManager.fileExists(pubspecPath)) {
-      PrintHelper()
-          .print('Not a Flutter project: pubspec.yaml not found..', color: red);
+      print('Not a Flutter project: pubspec.yaml not found..', color: red);
       return getBaseUri();
     }
     final pubspec = loadYaml(io.File(pubspecPath).readAsStringSync());
     final dependencies = pubspec['dependencies'] as Map?;
-    PrintHelper().packageName = pubspec['name'];
+    packageName = pubspec['name'];
     if (dependencies == null || !dependencies.containsKey('flutter')) {
-      PrintHelper().print(
-          'Not a Flutter project: flutter dependency not found.',
-          color: red);
+      print('Not a Flutter project: flutter dependency not found.', color: red);
       return getBaseUri();
     }
-    PrintHelper().print('Chosen Path: $base',
+    print('Chosen Path: $base',
         color: cyan, style: styleBold, flushAndRewrite: true);
     return base;
   }
 
-  // should be moved to print helper as seperation of concern
-  List<String> getUserExcludes() => PrintHelper().promptAny(
+  List<String> getUserExcludes() => promptAny(
       'excludes: to exclude files with specific path. for example: "presentation,business" excludes all paths that contain presentation or business');
 }
