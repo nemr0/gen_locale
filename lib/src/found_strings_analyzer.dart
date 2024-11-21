@@ -1,23 +1,22 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:gen_locale/src/models/string_data.dart';
-import 'package:gen_locale/src/models/text_map_builder.dart';
+import 'package:gen_locale/src/models/found_strings_analyzer_abs.dart';
 import 'package:gen_locale/src/string_processor.dart';
 import 'package:string_literal_finder/string_literal_finder.dart';
+import 'package:path/path.dart' as p;
 
-class FoundedStringsAnalyzer {
+class FoundedStringsAnalyzerImpl implements FoundedStringsAnalayzer {
+  @override
   SetOfStringData get setOfStringData => _setOfStringData;
 
+  @override
   PathToStringData get pathToStringData => _pathToString;
 
   final SetOfStringData _setOfStringData = {};
 
   final PathToStringData _pathToString = {};
 
-  // Injecting StringProcessor via constructor
-  final StringProcessor _stringProcessor;
-
-  FoundedStringsAnalyzer({required StringProcessor stringProcessor})
-      : _stringProcessor = stringProcessor;
+  FoundedStringsAnalyzerImpl();
 
   _addToPathToStringsMap(StringData data) {
     for (String path in data.filesPath) {
@@ -30,26 +29,37 @@ class FoundedStringsAnalyzer {
   }
 
   String _getKeyFor(String filePath, String source) {
-    // {file_name}_{index}
-    String key =
-        '${filePath.split('/').last.split('.').first}_${_pathToString[filePath]?.length ?? 0}';
-    // if key exists this wont be empty:
+    // Extract the file name without the extension
+    String fileName = p.basenameWithoutExtension(filePath);
+
+    // Get the current count of found strings for this file path
+    int currentIndex = _pathToString[filePath]?.length ?? 0;
+
+    // Create the initial key format
+    String key = '${fileName}_$currentIndex';
+
+    // Check if the key already exists
     final keyExistsList =
         _setOfStringData.where((element) => element.key == key);
+
+    // If the key exists and the source matches, return the key
     if (keyExistsList.isNotEmpty) {
       if (keyExistsList.first.source == source) {
         return key;
       }
-      // recursive to paths
-      key = _getKeyFor(key, source);
+
+      // If the source does not match, recursively get a new key
+      return _getKeyFor(filePath, source);
     }
+
     return key;
   }
 
+  @override
   void addAFoundStringLiteral(FoundStringLiteral foundString) {
     Set<String> filesPath = {foundString.filePath};
     String source = foundString.stringLiteral.toSource();
-    if (_stringProcessor.valueFromSource(source).isEmpty) return;
+    if (StringProcessor.valueFromSource(source).isEmpty) return;
     final withSamePathAndSource = setOfStringData.where((element) =>
         element.filesPath.contains(foundString.filePath) &&
         element.source == source);
@@ -61,11 +71,11 @@ class FoundedStringsAnalyzer {
         filesPath.addAll(data.filesPath);
       }
     }
-    final matched = _stringProcessor.matchVariables(source);
+    final matched = StringProcessor.matchVariables(source);
 
     StringData stringData = StringData(
         source: source,
-        value: _stringProcessor.valueFromSource(matched.$1),
+        value: StringProcessor.valueFromSource(matched.$1),
         variables: matched.$2,
         withContext: containsContext(foundString.stringLiteral.parent),
         filesPath: filesPath,
@@ -73,6 +83,7 @@ class FoundedStringsAnalyzer {
     addAStringData(stringData);
   }
 
+  @override
   bool containsContext(AstNode? node) {
     AstNode? parent = node?.parent;
     while (parent != null) {
@@ -109,6 +120,7 @@ class FoundedStringsAnalyzer {
     return false;
   }
 
+  @override
   void addAStringData(StringData foundString) {
     _setOfStringData.removeWhere((element) {
       if (element.source == foundString.source) {
@@ -122,11 +134,14 @@ class FoundedStringsAnalyzer {
     _setOfStringData.add(foundString);
   }
 
+  @override
   Set<String> get keys => _setOfStringData.map((e) => e.key).toSet();
 
+  @override
   Map<String, dynamic> get jsonMap => Map<String, dynamic>.fromEntries(
       _setOfStringData.map((e) => MapEntry(e.key, e.value)));
 
+  @override
   void addAllStringData(Set<StringData> foundString) {
     for (StringData data in foundString) {
       addAStringData(data);
